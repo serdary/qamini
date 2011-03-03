@@ -1,0 +1,47 @@
+You can create / change your q & a website theme 
+------------------------------------------------
+
+You have two options, 
+- You can override entire views and static files such as stylesheets, javascripts and images
+- You can just override static files such as stylesheets, javascripts and images
+
+
+1. Override just static files
+-----------------------------
+
+You need following folders:
+
+* static/themes/YOUR_THEME_NAME/js
+* static/themes/YOUR_THEME_NAME/css
+* static/themes/YOUR_THEME_NAME/images
+
+Create these folders, and the files within these folders with the same name.
+After creating your custom files, you should change settings table, the value of the 'static_files_dir' key.
+
+
+2. Override entire theme
+------------------------
+
+To create your custom theme, you need following folders:
+
+* static/themes/YOUR_THEME_NAME/js
+* static/themes/YOUR_THEME_NAME/css
+* static/themes/YOUR_THEME_NAME/images
+
+* application/views/themes/YOUR_THEME_NAME/answer
+* application/views/themes/YOUR_THEME_NAME/comment
+* application/views/themes/YOUR_THEME_NAME/email
+* application/views/themes/YOUR_THEME_NAME/errors
+* application/views/themes/YOUR_THEME_NAME/partial
+* application/views/themes/YOUR_THEME_NAME/question
+* application/views/themes/YOUR_THEME_NAME/reserved
+* application/views/themes/YOUR_THEME_NAME/tag
+* application/views/themes/YOUR_THEME_NAME/template
+* application/views/themes/YOUR_THEME_NAME/user
+
+You have to create these folders, and the files within these folders with the same name.
+You can copy & paste some files from default_theme, if you do not want to override a part of the default theme, like javascripts.
+
+After creating your custom files, you should change settings table, the value of the 'active_theme' key.
+
+That's all.

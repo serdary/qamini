@@ -1,0 +1,13 @@
+<?php echo View::factory($theme_dir.'partials/post_form')
+             ->set('theme_dir', $theme_dir)
+             ->bind('notify_user', $notify_user)
+             ->bind('errors', $errors)
+             ->set('post', $post)
+             ->set('form_type', Helper_PostType::ANSWER)
+             ->set('form_action', URL::site(Route::get('answer')
+                   ->uri(array('action' => 'edit', 'id' => $post->id, 'question_id' => $question_id))))
+             ->set('form_title', __('Update Answer'))
+             ->set('button_value', __('Update'))
+             ->set('user_logged_in', TRUE)
+             ->set('token', $token)
+             ->render();

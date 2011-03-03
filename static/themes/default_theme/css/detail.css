@@ -1,0 +1,198 @@
+.detail-holder {
+    clear: both;
+    float: left;
+    overflow: hidden;
+    width: 900px;
+	word-wrap: break-word;
+}
+.detail-holder .question-holder {
+    clear: both;
+    float: left;
+}
+.detail-holder .question-details {
+    float: left;
+    width: 823px;
+}
+.detail-holder .answer-details {
+    float: left;
+    width: 823px;
+}
+.question-details h1.title {
+    margin-bottom: 5px;
+}
+.question-details .title a {
+    color: #0F649A;
+    font-size: 18px;
+    line-height: 24px;
+    text-decoration: none;
+}
+.question-details .title a:hover {
+    text-decoration: underline;
+}
+.question-details .content {
+    font-size: 14px;
+    line-height: 22px;
+    margin-bottom: 5px;
+}
+.question-details .user-actions {
+    clear: both;
+    float: left;
+    line-height: 26px;
+    margin: 10px 0;
+}
+.question-details .user-actions a {
+    margin-right: 10px;
+}
+.detail-holder .post-info {
+    color: #084F7C;
+    float: left;
+    font-size: 12px;
+    margin-top: 10px;
+}
+.detail-holder .post-info a, span {
+    color: #333333;
+}
+.detail-holder .post-info a:hover {
+    text-decoration: none;
+}
+.detail-holder .comment-info {
+    color: #084F7C;
+    font-size: 12px;
+    margin-left: 20px;
+}
+.detail-holder .comment-info a, span {
+    color: #333333;
+}
+.detail-holder .comment-info a:hover {
+    text-decoration: none;
+}
+.detail-holder .comments-holder, 
+.detail-holder .answer .answer-comments-holder {
+    border-top: 1px dotted #666666;
+    float: left;
+    margin: 10px 0 0 77px;
+    width: 823px;
+}
+.detail-holder .comment {
+    border-bottom: 1px dotted #DDDDDD;
+    clear: both;
+    float: left;
+    line-height: 16px;
+    padding: 10px 0;
+    width: 100%;
+}
+.detail-holder .comment .comment-action {
+	margin-left: 10px;
+}
+.detail-holder .comment-form {
+    clear: both;
+    float: left;
+    padding: 15px 0 0;
+    width: 100%;
+}
+.detail-holder .comment-form .form-elements {
+}
+.detail-holder .comment-form .form-elements .result {
+	display: none;
+}
+.detail-holder .comment-form .form-elements .comment-label {
+    float: left;
+    margin: 3px 10px 0 0;
+}
+.detail-holder .comment-form .form-elements .comment-text {
+    height: 50px;
+    width: 450px;
+}
+.detail-holder .answers-holder {
+    border-top: 1px solid #999999;
+    clear: both;
+    float: left;
+    padding: 15px 0;
+    margin-top: 15px;
+    width: 100%;
+}
+.detail-holder .answers-holder .total-answer-title {
+    border-bottom: 2px solid;
+    color: #0F649A;
+    float: left;
+    font-size: 22px;
+    font-weight: normal;
+    margin: 10px 0;
+    padding-bottom: 3px;
+}
+.detail-holder .answer {
+    border-bottom: 1px solid #999999;
+    clear: both;
+    float: left;
+    padding: 10px 0;
+    width: 100%;
+}
+.detail-holder .answer .answer-content {
+    float: left;
+    font-size: 14px;
+    line-height: 22px;
+    margin-bottom: 5px;
+    width: 823px;
+}
+.detail-holder .answer .answer-actions {
+    clear: both;
+    float: left;
+    line-height: 26px;
+    margin: 15px 0;
+}
+.detail-holder .answer .answer-actions a {
+    margin-right: 10px;
+}
+.detail-holder .answer .answer-comments-holder .comment-form {
+	border-bottom: none;
+}
+.detail-holder .answer-form {
+    clear: both;
+    float: left;
+    width: 100%;
+}
+.detail-holder .answer-form h2 {   
+}
+.detail-holder .tags {
+    margin-top: 10px;
+}
+.detail-holder .tags span{
+    font-weight: bold;
+    color: #555555;
+}
+.detail-holder .tags a {
+    color: #666666;
+    padding: 2px 5px;
+    text-decoration: none;
+}
+.detail-holder .tags a:hover {
+    /*text-decoration: underline;
+    font-weight: bold;*/
+    background-color: #666666;
+    color: #FFFFFF;
+}
+.vote-info .vote-left-side {
+    float: left;
+    width: 43px;
+}
+.vote-info .accept-post-holder {
+    clear: both;
+    float: left;
+    margin: 3px 0 0 6px;
+}
+.vote-info .accept-post-holder a {
+    display: block;
+    height: 24px;
+    text-indent: -9999px;
+    width: 24px;
+}
+.vote-info .accept-post {
+    background: url("../images/check-empty.png") no-repeat scroll 0 0 transparent;
+}
+.vote-info .accept-post-holder .accepted {
+    background: url("../images/check-full.png") no-repeat scroll 0 0 transparent;
+}
+.detail-holder .delete-form {
+    float: right;
+    margin-left: 20px;
+}

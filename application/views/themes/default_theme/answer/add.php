@@ -1,0 +1,12 @@
+<?php echo View::factory($theme_dir.'partials/post_form')
+             ->set('theme_dir', $theme_dir)
+             ->set('user_logged_in', $user_logged_in)
+             ->set('notify_user', $notify_user)
+             ->set('errors', $errors)
+             ->set('post', $answer)
+             ->set('form_type', Helper_PostType::ANSWER)
+             ->set('form_action', $form_action)
+             ->set('form_title', __('Add Answer'))
+             ->set('button_value', __('Add Answer'))
+             ->set('token', $token)
+             ->render();

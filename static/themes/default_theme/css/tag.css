@@ -1,0 +1,21 @@
+.tags-holder {
+}
+.tags-holder .row {
+    height: 30px;
+}
+.tags-holder .row .title {
+}
+.tags-holder .row .tag {
+    background-color: #1197F0;
+    color: #FFFFFF;
+    font-weight: bold;
+    padding: 2px 5px;
+    text-decoration: none;
+}
+.tags-holder .row .tag:hover {
+    background-color: #666666;
+    color: #FFFFFF;
+}
+.tags-holder .row .tag-questions {
+    margin-left: 10px;
+}

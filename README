@@ -1,0 +1,61 @@
+Qamini - Open Source Mini Question & Answer Software
+----------------------------------------------------
+
+Author: Serdar Yildirim // me[dot]serdaryildirim[dot]com
+Website: www.qamini.com
+Demo Website: www.qamini.com/qa
+
+
+Qamini Description
+------------------
+
+Qamini is an open source question & answer software developed with MySql, PHP 5 and Kohana 3.1 MVC Framework.
+Main concern is simplicity, so there is no lots of extra features like thumbnails or badges.
+
+Qamini is themable, including all views, static files such as javascripts, stylesheets and images.
+
+
+Current features
+----------------
+
+* Registration, User pages
+* Ask Question (With / Without Registration)
+* Add Answers (With / Without Registration)
+* Add Comments
+* Vote up / down questions or answers
+* Accept answers
+* Get reputation points
+* Tags
+* Internationalization Support
+
+
+Installation
+------------
+
+* Download qamini source codes.
+* Download latest version of kohana 3 (http://kohanaframework.org/) and copy all files under kohana/system to qamini/system.
+* Copy kohana install.php file to /qamini and upload all files to your server.
+* Open your website and make sure your environment passes all tests.
+Remember, after your environment is ready, you need to rename or remove install.php file.
+
+* Copy example.htaccess to .htaccess and change "Installation Directory" to your installation directory on your server.
+* Change qamini installation directory in application/bootstrap.php file to your installation directory.
+* Add below line to your .htaccess file if your installation will be in production mode.
+	-SetEnv KOHANA_ENV "production" 
+
+* Create a database for qamini and dump qamini_db.sql into the database.
+* Update database connection in application/config/database.php 
+
+* Update hash key that used to hash passwords (in application/config/auth.php)
+* Update system values in application/config/config.php
+* Update email settings in application/config/email.php
+* If you will change the default theme, update active theme for the website. (in application/config/settings.php)
+	- see theme_install for detailed instructions
+
+That's it, your question & answer website is ready to go!
+
+
+Found bug(s)?
+-------------
+
+Please submit bugs or feature requests to Github.
