@@ -798,6 +798,7 @@ class Model_Post extends ORM {
 	 * @uses   Model_Post::save_post()
 	 * @uses   Model_Post::update_parent_stats()
 	 * @uses   Model_Post::handle_reputation()
+	 * @uses   Model_Post::send_post_update_notification()
 	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
 	private function create_post($post, $post_type)
@@ -845,6 +846,12 @@ class Model_Post extends ORM {
 		if (isset($post['user_id']) && $post['user_id'] > 0)
 		{
 			$this->handle_reputation($reputation_type);
+		}
+		
+		// Send email notification if parent post owner wants to be notified
+		if ($this->parent_post_id !== NULL && $this->parent_post_id > 0)
+		{
+			$this->send_post_update_notification();
 		}
 	}
 
@@ -1263,5 +1270,74 @@ class Model_Post extends ORM {
 
 		if (!$parent_post->save())
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::update_parent_stats(): Could not save parent post. ID: ' . $parent_post->id);
+	}
+	
+	/**
+	 * Sends notification email if the parent post owner wants 
+	 * to be notified about changes on his/her post.
+	 */
+	private function send_post_update_notification()
+	{
+		if (($parent_post = ORM::factory('post')->get($this->parent_post_id, Helper_PostType::ALL)) === NULL)
+		{
+			Kohana_Log::instance()->add(Kohana_Log::ERROR
+			, 'Model_Post::send_post_update_notification(): Could not get parent post. ID: ' 
+			. $this->id . ', parent ID: ' . $this->parent_post_id);
+			
+			return;
+		}
+
+		if ($parent_post->notify_email === NULL || $parent_post->notify_email === '0')
+			return;
+
+		// If parent post and this post have same owner, don't send any email
+		if ($parent_post->user_id === $this->user_id)
+			return;
+
+		if ($parent_post->notify_email === '1')
+		{
+			// Try to get owner user
+			if (!($owner_user = ORM::factory('user')->get_user_by_id($parent_post->user_id)))
+			{
+				Kohana_Log::instance()->add(Kohana_Log::ERROR
+				, 'Model_Post::send_post_update_notification(): Could not get parent post user. ID: ' 
+				. $parent_post->id . ', user ID: ' . $parent_post->user_id);
+				
+				return;
+			}
+			
+			$email_address = $owner_user->email;
+			$created_by = $owner_user->username;
+		}
+		else
+		{
+			$email_address = $parent_post->notify_email;
+			$created_by = ($parent_post->created_by === NULL) ? '' : $parent_post->created_by;
+		}
+
+		// If the parent post is an answer, we need to get its parent question for id and slug
+		if ($parent_post->parent_post_id !== NULL)
+		{
+			if (($post = ORM::factory('post')->get($parent_post->parent_post_id, Helper_PostType::QUESTION)) === NULL)
+			{
+				Kohana_Log::instance()->add(Kohana_Log::ERROR
+				, 'Model_Post::send_post_update_notification(): Could not get parent post. ID: '
+				 . $parent_post->id . ', parent ID: ' . $parent_post->parent_post_id);
+				 
+				return;
+			}
+		}
+		else
+		{
+			$post = $parent_post;
+		}
+		
+		$link = URL::site(Route::get('question')->uri(
+		array('action'=>'detail', 'id' => $post->id, 'slug' => $post->slug)), 'http');
+		
+		Helper_Mailer::instance()->send_mail($email_address, $created_by, Kohana::config('config.website_name') 
+		, Kohana::config('config.website_name'), 'post_update_notification_email'
+		, array('url' => $link, 'created_by' => $created_by));
+
 	}
 }

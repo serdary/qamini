@@ -102,8 +102,10 @@ h2 {
 .wrapper .footer .footer-nav-item a:hover {
     text-decoration: underline;
 }
+.wrapper .footer .qamini-credit a,
 .wrapper .footer .qamini-credit a:visited,
 .wrapper .footer .footer-nav-item a:visited {
+    text-decoration: underline;
 	color: #444444;
 }
 .wrapper .footer .qamini-credit {
