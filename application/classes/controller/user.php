@@ -299,27 +299,17 @@ class Controller_User extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''), '');
 
-		// TODO: use validation object.
-		if (!isset($post['password']) || $post['password'] === '')
-		{
-			$errors[] = array('password' => 'New Password is required.');
-		}
-		if(!isset($post['password_confirm']) || $post['password_confirm'] === '')
-		{
-			$errors[] = array('password_confirm' => 'Please re-enter your new password.');
-		}
-
-		if (!empty($errors))
-			return;
+		$extra_rules = Validation::factory($post)
+			->rule('password', 'not_empty')
+			->rule('password_confirm', 'not_empty')
+			->rule('password_confirm',  'matches', array(':validation', ':field', 'password'));
 
 		try
 		{
-			$extra_rules = Validation::factory($post)
-				->rule('password_confirm', 'matches', array(
-	                ':validation', ':field', 'password'
-	                ));
-
-            if ($this->user->confirm_reset_password_form($post, $extra_rules))
+			if ($extra_rules->check() === FALSE)
+				throw new ORM_Validation_Exception('Model_User', $extra_rules);
+				
+            if ($this->user->confirm_reset_password_form($post))
             {
               	Message::set(Message::SUCCESS, __('Your password is successfully changed. Please login with your new password.'));
                	$this->request->redirect(Route::get('user')->uri(array('action' => 'login')));
@@ -359,34 +349,21 @@ class Controller_User extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''), '');
 
-		// TODO: use validation object.
-		if (!isset($post['old_password']) || $post['old_password'] === '')
-		{
-			$errors = array('old_password' => 'Old Password is required.');
-		}
-		if (!isset($post['password']) || $post['password'] === '')
-		{
-			$errors[] = array('password' => 'New Password is required.');
-		}
-		if(!isset($post['password_confirm']) || $post['password_confirm'] === '')
-		{
-			$errors[] = array('password_confirm' => 'Please re-enter your new password.');
-		}
-
-		if (!empty($errors))
-			return;
-			
+		$extra_rules = Validation::factory($post)
+			->rule('old_password', 'not_empty')
+			->rule('password', 'not_empty')
+			->rule('password_confirm', 'not_empty')
+			->rule('password_confirm',  'matches', array(':validation', ':field', 'password'));
+		
 		try
 		{
-			$extra_rules = Validation::factory($post)
-				->rule('password_confirm', 'matches', array(
-	                ':validation', ':field', 'password'
-	                ));
+			if ($extra_rules->check() === FALSE)
+				throw new ORM_Validation_Exception('Model_User', $extra_rules);
 	                 
-            if ($this->user->change_password($post, $extra_rules))
+            if ($this->user->change_password($post))
             {
                	Message::set(Message::SUCCESS, __('Your password has been changed.'));
-               	$this->request->redirect(Route::get('profile')->uri(array('username' => $this->user->username)));
+               	//$this->request->redirect(Route::get('profile')->uri(array('username' => $this->user->username)));
             }
 		}
 		catch (ORM_Validation_Exception $ex)

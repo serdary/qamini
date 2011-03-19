@@ -16,7 +16,7 @@ class Helper_Mailer {
 	private static $instance;
 
 	/**
-	 * Returns the singleton of Helper_Mailer class
+	 * Returns the singleton instance of Helper_Mailer class
 	 *
 	 * @return object Instance of Helper_Mailer
 	 */
@@ -69,7 +69,8 @@ class Helper_Mailer {
 			Swift_Mailer::newInstance($transport)->send($message);
 		}
 		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Helper_Mailer::send_mail(), msg: '. $ex->getMessage());
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Helper_Mailer::send_mail(), view file: ' 
+				. $view_file . ' msg: '. $ex->getMessage());
 		}
 	}
 }

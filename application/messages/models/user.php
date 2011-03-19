@@ -10,6 +10,9 @@ return array(
 	'password' => array(
         'not_empty' => 'Password is required.',
 	),
+	'password_confirm' => array(
+        'matches' => 'The password fields did not match.',
+	),
 	'email' => array(
         'not_empty' => 'Email is required.',
         'min_length' => 'Email must be at least :param2 characters long.',

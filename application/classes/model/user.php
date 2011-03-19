@@ -145,35 +145,11 @@ class Model_User extends Model_Auth_User {
 												. '?id=' . $this->id . '&auth_token='
 												. Auth::instance()->hash($this->email)
 											, 'http');
-
-		$body = View::factory($theme_dir . 'email/confirm_signup', $this->as_array())
-			->set('url', $link);
-
-		// Get the email configuration into array
-		$email_config = Kohana::config('email');
-
-		// Load Swift Mailer required files
-		require_once Kohana::find_file('vendor', 'swiftmailer/lib/swift_required');
-
-		// Create an email message to reset user's password
-		$message = Swift_Message::newInstance()
-			->setSubject(Kohana::config('config.website_name') . __(' - Signup'))
-			->setFrom(array(Kohana::config('config.email') => Kohana::config('config.website_name') . __(' Website')))
-			->setTo(array($this->email => $this->username))
-			->setBody($body);
-
-		// Connect to the server
-		$transport = Swift_SmtpTransport::newInstance($email_config->server, $email_config->port, $email_config->security)
-			->setUsername($email_config->username)
-			->setPassword($email_config->password);
-
-		// Try to send the email
-		try {
-			Swift_Mailer::newInstance($transport)->send($message);
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'User signup email send error, msg: '. $ex->getMessage());
-		}
+			
+		Helper_Mailer::instance()->send_mail($this->email, $this->username
+			, Kohana::config('config.website_name') . __(' - Signup') 
+			, Kohana::config('config.website_name') . __(' Website'), 'confirm_signup'
+			, array('url' => $link, 'username' => $this->username));
 
 		return TRUE;
 	}
@@ -242,37 +218,11 @@ class Model_User extends Model_Auth_User {
 				. '&time=' . $time
 			, 'http');
 			
-		$body = View::factory($theme_dir . 'email/confirm_reset_password', $this->as_array())
-			->set('time', $time)
-			->set('url', $link);
-
-
-		// Get the email configuration into array
-		$email_config = Kohana::config('email');
-
-		// Load Swift Mailer required files
-		require_once Kohana::find_file('vendor', 'swiftmailer/lib/swift_required');
-
-		// Create an email message to reset user's password
-		$message = Swift_Message::newInstance()
-			->setSubject(Kohana::config('config.website_name') . __(' - Reset Password'))
-			->setFrom(array(Kohana::config('config.email') => Kohana::config('config.website_name') . __(' Website')))
-			->setTo(array($this->email => $this->username))
-			->setBody($body);
+		Helper_Mailer::instance()->send_mail($this->email, $this->username
+			, Kohana::config('config.website_name') . __(' - Reset Password') 
+			, Kohana::config('config.website_name') . __(' Website'), 'confirm_reset_password'
+			, array('url' => $link, 'username' => $this->username));
 			
-		// Connect to the server
-		$transport = Swift_SmtpTransport::newInstance($email_config->server, $email_config->port, $email_config->security)
-			->setUsername($email_config->username)
-			->setPassword($email_config->password);
-
-		// Try to send the email
-		try {
-			Swift_Mailer::newInstance($transport)->send($message);
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'User reset password email send error, msg: '. $ex->getMessage());
-		}
-
 		return TRUE;
 	}
 
@@ -313,17 +263,16 @@ class Model_User extends Model_Auth_User {
 	 * If the data has been validated, it is saved
 	 *
 	 * @param  array values
-	 * @param  Validation extra validations for user password
 	 * @throws ORM_Validation_Exception
 	 * @return boolean
 	 */
-	public function confirm_reset_password_form(array $data, $extra_rules)
+	public function confirm_reset_password_form(array $data)
 	{
 		$data = Validation::factory($data);
 
 		$this->password = $data['password'];
 
-		$this->save($extra_rules);
+		$this->save();
 
 		if (!$this->has('roles', ORM::factory('role', array('name' => 'user'))))
 		{
@@ -337,13 +286,13 @@ class Model_User extends Model_Auth_User {
 	 * Changes a user's password if data is valid.
 	 *
 	 * @param  array values
-	 * @param  Validation extra validations for user password
 	 * @throws ORM_Validation_Exception
 	 * @return boolean
 	 */
-	public function change_password(array $data, $extra_rules)
+	public function change_password(array $data)
 	{
-		$extra_rules->rule('old_password', array($this, 'check_password'));
+		$extra_rules = Validation::factory($data)
+			->rule('old_password', array($this, 'check_password'));
 			
 		// Save the new password
 		$this->password = $data['password'];
