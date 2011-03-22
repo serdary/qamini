@@ -691,6 +691,7 @@ class Model_Post extends ORM {
 	 */
 	public function get_relative_creation_time()
 	{
+		//TODO: so ugly, refactor!
 		if (($diff = time() - $this->created_at) <= 0)
 			return __('just now!');
 

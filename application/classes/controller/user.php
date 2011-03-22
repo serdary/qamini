@@ -363,7 +363,7 @@ class Controller_User extends Controller_Template_Main {
             if ($this->user->change_password($post))
             {
                	Message::set(Message::SUCCESS, __('Your password has been changed.'));
-               	//$this->request->redirect(Route::get('profile')->uri(array('username' => $this->user->username)));
+               	$this->request->redirect(Route::get('profile')->uri(array('username' => $this->user->username)));
             }
 		}
 		catch (ORM_Validation_Exception $ex)
