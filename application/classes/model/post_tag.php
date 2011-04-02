@@ -11,5 +11,7 @@
 class Model_Post_Tag extends ORM {
 
 	protected $_belongs_to = array('post' => array(), 'tag' => array());
+	
+	protected $_table_name = 'post_tag';
 
 }

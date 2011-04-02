@@ -6,7 +6,7 @@
 
 	<?php include Kohana::find_file('views', $theme_dir . '/partials/errors') ?>
 
-	<?php if ($form_type === Helper_PostType::QUESTION): ?>
+	<?php if ($form_type === Model_Post::QUESTION): ?>
 	<div class="row">
 		<label for="title"><?php echo __('Title') ?><span>*</span></label>
 		<input id="title" name="title" type="text" value="<?php echo HTML::chars($post->title) ?>" maxlength="300" class="text-input" />
@@ -31,14 +31,15 @@
 	
 	<div class="row">
 		<label for="user_notification_email"><?php echo __('Notification Email') ?></label>
-		<input id="user_notification_email" name="user_notification_email" type="text" value="<?php echo HTML::chars($post->notify_email) ?>" maxlength="127" class="text-input" />
+		<input id="user_notification_email" name="user_notification_email" type="text" value="<?php if($post->notify_email !== '0')	echo HTML::chars($post->notify_email) ?>" maxlength="127" class="text-input" />
 	</div>
 	<?php endif ?>
 	
-	<?php if ($form_type === Helper_PostType::QUESTION): ?>
+	<?php if ($form_type === Model_Post::QUESTION): ?>
 	<div class="row">
 		<label for="tags"><?php echo __('Tags') ?></label>
 		<input id="tags" name="tags" type="text" maxlength="150" class="text-input" value="<?php echo $tag_list ?>"/>
+		<div class="tag-info"><?php echo __('Please seperate tags with a comma.') ?></div>
 	</div>
 	<?php endif ?>
 	

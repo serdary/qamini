@@ -12,6 +12,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     protected function setUp()
     {
         Kohana::config('database')->default = Kohana::config('database')->test;
+        Database::$default = 'test';
         
         if (!self::$_empty_db)
         	$this->prepare_db();
@@ -173,13 +174,13 @@ class PostTest extends PHPUnit_Framework_TestCase
      * @depends testAcceptAnswer
      */      
     /*
-     * Add 3 user comments with ids 30 (P:11), 31(P:21), 32(P:26) => error
+     * Add 3 user comments with ids 30 (P:11), 31(P:21), 32(P:26)
      */  
     public function testAddCommentUser()
     {
     	$this->addCommentUser(11);
     	$this->addCommentUser(21);
-    	$this->addCommentUser(26, FALSE);
+    	$this->addCommentUser(26);
     }
 
     /**
@@ -203,15 +204,17 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$_POST['content'] = "TEST - Question Add $index Content - guest";
     	$_POST['tags'] = 't-' . $index . ',a-' . $index . ',b-' . $index;
     	
-    	$result_add = ORM::factory('post')->add_question($_POST);
+    	$question = new Model_Question;
+    	$result_add = $question->insert($_POST);
     	
-    	$this->assertSame(URL::title($_POST['title']), $result_add['slug']);
+    	$this->assertSame(URL::title($_POST['title']), $question->slug);
+    	$this->assertSame(TRUE, $result_add);
     }
     
     private function addQuestionUser($index)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::QUESTION_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::QUESTION_ADD);
     	
     	$_POST = array();
     	$_POST['title'] = "TEST - Question Add $index - user";
@@ -222,9 +225,11 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$old_rep = $user->reputation;
     	$old_question_count = $user->question_count;
     	
-    	$result_add = ORM::factory('post')->add_question($_POST);
+    	$question = new Model_Question;
+    	$result_add = $question->insert($_POST);
     	
-    	$this->assertSame(URL::title($_POST['title']), $result_add['slug']);
+    	$this->assertSame(URL::title($_POST['title']), $question->slug);
+    	$this->assertSame(TRUE, $result_add);
     	
     	$this->assertSame($user->reputation, $old_rep + $reputation_value);
     	
@@ -234,17 +239,17 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function updateUserQuestion($id, $raise_error = TRUE)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::QUESTION_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::QUESTION_ADD);
 
     	$old_rep = $user->reputation;
     	$old_question_count = $user->question_count;
     	
     	try {
-			$post = $user->get_post_by_id($id, Helper_PostType::QUESTION);
+			$post = Model_Question::get_user_question_by_id($id, $user);
     	}
     	catch (Exception $ex) {
 			if ($raise_error)
-				$this->assertEquals('get_post_by_id', $ex->getMessage());	// Raise error
+				$this->assertEquals('get_user_question_by_id', $ex->getMessage());	// Raise error
 				
 			return;
     	}
@@ -256,10 +261,10 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$_POST['tags'] = 'updated-tag';
     	
 		try {
-    		$result_edit = $post->edit_question($_POST, '');
+    		$result_edit = $post->edit($_POST, '');
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('edit_question', $ex->getMessage());	// Raise error
+			$this->assertEquals('edit', $ex->getMessage());	// Raise error
 		}
     	
     	$this->assertSame($user->reputation, $old_rep);
@@ -270,26 +275,19 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function deleteUserQuestion($id, $raise_error = TRUE)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::QUESTION_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::QUESTION_ADD);
 
     	$old_rep = $user->reputation;
     	$old_question_count = $user->question_count;
     	
     	try {
-			$post = $user->get_post_by_id($id, Helper_PostType::QUESTION);
-    	}
-    	catch (Exception $ex) {
-			if ($raise_error)
-				$this->assertEquals('get_post_by_id', $ex->getMessage());	// Raise error
-				
-			return;
-    	}
-			
-		try {
-			$post->delete_question();
+			$post = Model_Question::get_user_question_by_id($id, $user)->delete();
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('delete_question', $ex->getMessage());	// Raise error
+			if ($raise_error)
+				$this->assertEquals('delete', $ex->getMessage());	// Raise error
+				
+			return;
 		}
     	
     	$this->assertSame($user->reputation, $old_rep - $reputation_value);
@@ -300,18 +298,18 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function addAnswerGuest($parent_id)
     {
     	$_POST = array();
-    	//$_POST['title'] = "TEST - Answer For $parent_id th question- guest";
     	$_POST['content'] = "TEST - Answer For $parent_id th question Content - guest";
     	
-    	if (($question = ORM::factory('post')->get($parent_id)) === NULL)
-    		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
+    	if (($question = Model_Question::get($parent_id)) === NULL)
+    		throw new Kohana_Exception('Question could not be retrieved, ID:' . $parent_id);
     	
-    	$result_add = ORM::factory('post')->add_answer($_POST, $parent_id);
+    	$answer = new Model_Answer;
+    	$result_add = $answer->insert($_POST, $parent_id);
     	
     	$this->assertSame(TRUE, $result_add);
     	
-    	if (($question_updated = ORM::factory('post')->get($parent_id)) === NULL)
-    		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
+    	if (($question_updated = Model_Question::get($parent_id)) === NULL)
+    		throw new Kohana_Exception('Question could not be retrieved, ID:' . $parent_id);
 
     	$this->assertSame($question->answer_count + 1, (int) $question_updated->answer_count);
     }
@@ -319,20 +317,20 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function addAnswerUser($parent_id)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::ANSWER_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::ANSWER_ADD);
     	
     	$_POST = array();
-    	//$_POST['title'] = "TEST - Answer For $parent_id th question- user";
     	$_POST['content'] = "TEST - Answer For $parent_id th question Content - user";
     	$_POST['user_id'] = $user->id;
     	
-    	if (($question = ORM::factory('post')->get($parent_id)) === NULL)
-    		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
+    	if (($question = Model_Question::get($parent_id)) === NULL)
+    		throw new Kohana_Exception('Question could not be retrieved, ID: ' . $parent_id);
     		    	
     	$old_rep = $user->reputation;
     	$old_answer_count = $user->answer_count;
     	
-    	$result_add = ORM::factory('post')->add_answer($_POST, $parent_id);
+    	$answer = new Model_Answer;
+    	$result_add = $answer->insert($_POST, $parent_id);
     	
     	$this->assertSame(TRUE, $result_add);
     	
@@ -340,7 +338,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	
     	$this->assertSame($user->answer_count, $old_answer_count + 1);
     	
-    	if (($question_updated = ORM::factory('post')->get($parent_id)) === NULL)
+    	if (($question_updated = Model_Question::get($parent_id)) === NULL)
     		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
     		
     	$this->assertSame($question->answer_count + 1, (int) $question_updated->answer_count);
@@ -354,7 +352,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$old_answer_count = $user->answer_count;
     	
     	try {
-			$post = $user->get_post_by_id($id, Helper_PostType::ANSWER);
+			$post = Model_Answer::get_user_answer_by_id($id, $user);
 			
 			if ($parent_id != $post->parent_post_id)
 				throw new Kohana_Exception(sprintf('Given parent id and post parent id are not equal. given: %d, expected: %d'
@@ -362,7 +360,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	}
     	catch (Exception $ex) {
 			if ($raise_error)
-				$this->assertEquals('get_post_by_id', $ex->getMessage());	// Raise error
+				$this->assertEquals('get_user_answer_by_id', $ex->getMessage());	// Raise error
 				
 			return;
     	}
@@ -372,10 +370,10 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$_POST['user_id'] = $user->id;
     	
 		try {
-    		$question_slug = $post->edit_answer($_POST);
+    		$question_slug = $post->edit($_POST);
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('edit_answer', $ex->getMessage());	// Raise error
+			$this->assertEquals('edit', $ex->getMessage());	// Raise error
 		}
     	
     	$this->assertNotEquals($question_slug, '');
@@ -388,13 +386,13 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function deleteUserAnswer($id, $parent_id, $raise_error = TRUE)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::ANSWER_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::ANSWER_ADD);
 
     	$old_rep = $user->reputation;
     	$old_answer_count = $user->answer_count;
     	
     	try {
-			$post = $user->get_post_by_id($id, Helper_PostType::ANSWER);
+			$post = Model_Answer::get_user_answer_by_id($id, $user);
 			
 			if ($parent_id != $post->parent_post_id)
 				throw new Kohana_Exception(sprintf('Given parent id and post parent id are not equal. given: %d, expected: %d'
@@ -402,16 +400,16 @@ class PostTest extends PHPUnit_Framework_TestCase
     	}
     	catch (Exception $ex) {
 			if ($raise_error)
-				$this->assertEquals('get_post_by_id', $ex->getMessage());	// Raise error
+				$this->assertEquals('get_user_answer_by_id', $ex->getMessage());	// Raise error
 				
 			return;
     	}
 			
 		try {
-			$post->delete_answer();
+			$post->delete();
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('delete_question', $ex->getMessage());	// Raise error
+			$this->assertEquals('delete', $ex->getMessage());	// Raise error
 		}
     	
     	$this->assertSame($user->reputation, $old_rep - $reputation_value);
@@ -424,18 +422,18 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$user = Auth::instance()->get_user();
     	if ($vote_type === 1)
     	{
-    		$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::QUESTION_VOTE_UP);
-    		$reputation_value_owner = (int) Model_Setting::instance()->get(Helper_ReputationType::OWN_QUESTION_VOTED_UP);
+    		$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::QUESTION_VOTE_UP);
+    		$reputation_value_owner = (int) Model_Setting::instance()->get(Model_Reputation::OWN_QUESTION_VOTED_UP);
     	}
     	else 
     	{
-    		$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::QUESTION_VOTE_DOWN);
-    		$reputation_value_owner = (int) Model_Setting::instance()->get(Helper_ReputationType::OWN_QUESTION_VOTED_DOWN);
+    		$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::QUESTION_VOTE_DOWN);
+    		$reputation_value_owner = (int) Model_Setting::instance()->get(Model_Reputation::OWN_QUESTION_VOTED_DOWN);
     	}
 
     	$old_rep = $user->reputation;
     	
-    	if (($post = ORM::factory('post')->get($post_id, Helper_PostType::QUESTION)) === NULL)
+    	if (($post = Model_Question::get($post_id)) === NULL)
     	{
 			if ($raise_error)
 				$this->assertEquals('voteQuestion', "post not found, ID: $post_id");	// Raise error
@@ -450,7 +448,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 			return;
 		}
     	
-    	$post_type = Helper_PostType::QUESTION;
+    	$post_type = Model_Post::QUESTION;
     	
         if ($post->user_id != 0)
     	{
@@ -464,10 +462,10 @@ class PostTest extends PHPUnit_Framework_TestCase
     	}
 			
 		try {
-			$result = $post->vote_post($vote_type);
+			$result = $post->vote($vote_type);
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('vote_post', $ex->getMessage());	// Raise error
+			$this->assertEquals('vote', $ex->getMessage());	// Raise error
 		}
 		
 
@@ -493,18 +491,18 @@ class PostTest extends PHPUnit_Framework_TestCase
     	$user = Auth::instance()->get_user();
     	if ($vote_type === 1)
     	{
-    		$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::ANSWER_VOTE_UP);
-    		$reputation_value_owner = (int) Model_Setting::instance()->get(Helper_ReputationType::OWN_ANSWER_VOTED_UP);
+    		$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::ANSWER_VOTE_UP);
+    		$reputation_value_owner = (int) Model_Setting::instance()->get(Model_Reputation::OWN_ANSWER_VOTED_UP);
     	}
     	else 
     	{
-    		$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::ANSWER_VOTE_DOWN);
-    		$reputation_value_owner = (int) Model_Setting::instance()->get(Helper_ReputationType::OWN_ANSWER_VOTED_DOWN);
+    		$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::ANSWER_VOTE_DOWN);
+    		$reputation_value_owner = (int) Model_Setting::instance()->get(Model_Reputation::OWN_ANSWER_VOTED_DOWN);
     	}
 
     	$old_rep = $user->reputation;
     	
-        if (($post = ORM::factory('post')->get($post_id, Helper_PostType::ANSWER)) === NULL)
+        if (($post = Model_Answer::get($post_id)) === NULL)
     	{
 			if ($raise_error)
 				$this->assertEquals('voteAnswer', "post not found, ID: $post_id");	// Raise error
@@ -519,7 +517,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 			return;
 		}
     	
-    	$post_type = Helper_PostType::ANSWER;
+    	$post_type = Model_Post::ANSWER;
     	
         if ($post->user_id != 0)
     	{
@@ -533,10 +531,10 @@ class PostTest extends PHPUnit_Framework_TestCase
     	}
 			
 		try {
-			$result = $post->vote_post($vote_type);
+			$result = $post->vote($vote_type);
 		}
 		catch (Exception $ex) {
-			$this->assertEquals('vote_post', $ex->getMessage());	// Raise error
+			$this->assertEquals('vote', $ex->getMessage());	// Raise error
 		}
 		
 		if ($result !== 1)
@@ -560,12 +558,12 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
     	$user = Auth::instance()->get_user();
 
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::ACCEPTED_ANSWER);
-    	$reputation_value_owner = (int) Model_Setting::instance()->get(Helper_ReputationType::OWN_ACCEPTED_ANSWER);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::ACCEPTED_ANSWER);
+    	$reputation_value_owner = (int) Model_Setting::instance()->get(Model_Reputation::OWN_ACCEPTED_ANSWER);
 
     	$old_rep = $user->reputation;
     	
-        if (($post = ORM::factory('post')->get($post_id, Helper_PostType::ANSWER)) === NULL)
+        if (($post = Model_Answer::get($post_id)) === NULL)
     	{
 			if ($raise_error)
 				$this->assertEquals('acceptAnswer', "post not found, ID: $post_id");	// Raise error
@@ -621,18 +619,19 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function addCommentUser($parent_id, $raise_error = TRUE)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::COMMENT_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::COMMENT_ADD);
     	
     	$old_rep = $user->reputation;
     	
     	$_POST = array();
     	$_POST['content'] = "TEST - Comment For $parent_id th post Content - user";
     	
-    	if (($question = ORM::factory('post')->get($parent_id, Helper_PostType::ALL)) === NULL && $raise_error)
+    	if (($question = Model_Post::get($parent_id)) === NULL && $raise_error)
     		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
     				
 		try {
-			$add_comment_result = ORM::factory('post')->add_comment($_POST, $parent_id);
+			$comment = new Model_Comment;
+			$add_comment_result = $comment->insert($_POST, $parent_id);
 		}
 		catch (Exception $ex) {
 			if ($raise_error)
@@ -645,7 +644,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 		
     	$this->assertSame($user->reputation, $old_rep + $reputation_value);
     	
-    	if (($question_updated = ORM::factory('post')->get($parent_id, Helper_PostType::ALL)) === NULL && $raise_error)
+    	if (($question_updated = Model_Post::get($parent_id)) === NULL && $raise_error)
     		throw new Kohana_Exception('Post could not be retrieved, ID:' . $parent_id);
     		
     	$this->assertSame($question->comment_count + 1, (int) $question_updated->comment_count);
@@ -654,17 +653,24 @@ class PostTest extends PHPUnit_Framework_TestCase
     private function deleteCommentUser($comment_id, $parent_id, $raise_error = TRUE)
     {
     	$user = Auth::instance()->get_user();
-    	$reputation_value = (int) Model_Setting::instance()->get(Helper_ReputationType::COMMENT_ADD);
+    	$reputation_value = (int) Model_Setting::instance()->get(Model_Reputation::COMMENT_ADD);
 		
     	$old_rep = $user->reputation;
     	
 		try {
-			$comment = $user->get_post_by_id($comment_id, Helper_PostType::COMMENT);
-			$comment->delete_comment();
+			$comment = Model_Comment::get_user_comment_by_id($comment_id, $user);
+			
+			if ($comment->parent_post_id != $parent_id && $raise_error)
+			{
+				$this->assertEquals('delete', 'Parents not matched!');	// Raise error
+				return;
+			}
+			
+			$comment->delete();
 		}
 		catch (Exception $ex) {
 			if ($raise_error)
-				$this->assertEquals('delete_comment', $ex->getMessage());	// Raise error
+				$this->assertEquals('delete', $ex->getMessage());	// Raise error
 				
 			return;
 		}
@@ -674,32 +680,53 @@ class PostTest extends PHPUnit_Framework_TestCase
     
     private function prepare_db()
     {
-    	$current_db = DB::select(array(DB::Expr('DATABASE()'), 'database'))->execute()->current();
+    	$this->prevent_test_overwrite_current_db();
+    	
+    	self::$_empty_db = TRUE;
+    	
+    	$this->prepare_database_for_test();
+    }
+    
+    private function prevent_test_overwrite_current_db()
+    {
+        $current_db = DB::select(array(DB::Expr('DATABASE()'), 'database'))->execute()->current();
     	
     	$test_db = Kohana::config('database')->test;
     	
     	if ($current_db['database'] !== $test_db['connection']['database'])
     	{
     		throw new Kohana_Exception('CURRENT DB IS NOT A TEST DB!!!!!');
-    		die();
     	}
+    }
+    
+    private function prepare_database_for_test()
+    {
+    	$this->drop_and_create_tables('/var/www/qamini/application/db_changes/31032011_1300_qamini_development_empty.sql');
     	
-    	self::$_empty_db = TRUE;
-    	
-    	$sql = '';
-    	try {
-    		$sql = file_get_contents('/var/www/qamini/application/db_changes/03032011_1300_empty_db_script.db');
-    		$query_arr = explode(';', $sql);
+    	$this->prepare_tables('/var/www/qamini/application/db_changes/03032011_1300_empty_db_script.sql');
+    }
+    
+    private function drop_and_create_tables($file_name)
+    {
+        $this->execute_sql_from_file($file_name);
+    }
+    
+    private function prepare_tables($file_name)
+    {
+        $this->execute_sql_from_file($file_name);
+    }
+    
+    private function execute_sql_from_file($file_name)
+    {
+        $sql = '';
+    	$sql = file_get_contents($file_name);
+    	$query_arr = explode(';', $sql);
 
-    		foreach ($query_arr as $q)
-    		{
-    			if ($q === '')	continue;
+    	foreach ($query_arr as $q)
+    	{
+    		if ($q === '')	continue;
     			
-	    		DB::query(NULL, $q)->execute();
-    		}
-    	}
-    	catch (Exception $ex) {
-    		echo $ex->getMessage();
+	    	DB::query(NULL, $q)->execute();
     	}
     }
 }

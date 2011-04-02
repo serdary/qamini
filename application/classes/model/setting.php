@@ -15,26 +15,26 @@ class Model_Setting extends ORM {
 	 *
 	 * @var array
 	 */
-	private $settings = array();
+	private $_settings = array();
 
 	/**
 	 * Singleton instance for Model_Setting class
 	 * 
 	 * @var
 	 */
-	private static $instance;
+	private static $_instance;
 
 	/**
 	 * Returns the singleton of Model_Setting class
 	 *
-	 * @return object Instance of Model_Setting
+	 * @return object
 	 */
 	public static function instance()
 	{
-		if (self::$instance !== NULL)
-			return self::$instance;
+		if (self::$_instance !== NULL)
+			return self::$_instance;
 
-		return self::$instance = new self;
+		return self::$_instance = new self;
 	}
 
 	/**
@@ -44,36 +44,60 @@ class Model_Setting extends ORM {
 	{
 		$cache = Cache::instance(Kohana::config('config.cache_driver'));
 
-		// Try to get settings from cache
-		if ($this->settings = $cache->get('settings'))
-			return;
+		if ($this->loaded_from_cache($cache))	return;
 
-		$this->settings = array();
-			
-		$data = ORM::factory('setting')->where('setting_status', '=', 'active')->find_all();
+		if (!$this->loaded_from_db())	$this->load_from_config();
 
-		foreach($data as $setting)
-		{
-			$this->settings[$setting->key] = $setting->value;
-		}
-
-		// If settings could not be loaded from db, try to load from config file
-		if (empty($this->settings))
-		{
-			$this->settings = Kohana::config('settings');
-		}
-
-		if (empty($this->settings))
+		if (empty($this->_settings))
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Settings could not be loaded from DB and settings config file!');
 			return;
 		}
 
 		// Set cache for 24 hours
-		if ($this->settings)
+		if ($this->_settings)
+			$cache->set('settings', $this->_settings, 3600 * 24);
+	}
+	
+	/**
+	 * Tries to load settings from cache
+	 * 
+	 * @param object cache instance
+	 * @return boolean
+	 */
+	private function loaded_from_cache($cache)
+	{
+		return ($this->_settings = $cache->get('settings'));
+	}
+	
+	/**
+	 * Tries to load settings from database
+	 * 
+	 * @return boolean
+	 */	
+	private function loaded_from_db()
+	{
+		$this->_settings = array();
+			
+		$data = ORM::factory('setting')->where('setting_status', '=', 'active')->find_all();
+
+		$found = FALSE;
+		
+		foreach($data as $setting)
 		{
-			$cache->set('settings', $this->settings, 3600 * 24);
+			$this->_settings[$setting->key] = $setting->value;
+			$found = TRUE;
 		}
+		
+		return $found;
+	}
+	
+	/**
+	 * Tries to load settings from config file
+	 */
+	private function load_from_config()
+	{
+		$this->_settings = Kohana::config('settings');
 	}
 
 	/**
@@ -81,21 +105,16 @@ class Model_Setting extends ORM {
 	 * If not found, returns empty string
 	 *
 	 * @param   string key
-	 * @return  string the value of the key
+	 * @return  string
 	 */
 	public function get($key = '')
 	{
 		$value = '';
-		if (!$key || $key === '')
-			return $value;
+		if (!$key || $key === '')	return $value;
 
-		if (empty($this->settings))
-		{
-			$this->load_settings();
-		}
+		if (empty($this->_settings))	$this->load_settings();
 
-		if (array_key_exists($key, $this->settings))
-			$value = $this->settings[$key];
+		if (array_key_exists($key, $this->_settings))	$value = $this->_settings[$key];
 
 		return $value;
 	}

@@ -20,8 +20,6 @@ class Controller_Questions extends Controller_Template_Main {
 
 	/**
 	 * Most recent + active questions are listed.
-	 *
-	 * @uses Controller_Questions::display_questions()
 	 */
 	public function action_index()
 	{
@@ -30,8 +28,6 @@ class Controller_Questions extends Controller_Template_Main {
 
 	/**
 	 * Newest questions are listed.
-	 *
-	 * @uses Controller_Questions::display_questions()
 	 */
 	public function action_newest()
 	{
@@ -40,8 +36,6 @@ class Controller_Questions extends Controller_Template_Main {
 
 	/**
 	 * Unanswered questions are listed.
-	 *
-	 * @uses Controller_Questions::display_questions()
 	 */
 	public function action_unanswered()
 	{
@@ -51,52 +45,39 @@ class Controller_Questions extends Controller_Template_Main {
 	/**
 	 * Question Detail Page.
 	 *
-	 * @uses Model_Post::get()
-	 * @uses Model_Post::get_answers_and_comments()
+	 * @uses Model_Question::get()
+	 * @uses Model_Question::load_answers_and_comments()
 	 * @uses Model_Post::get_post_owner_info()
 	 */
 	public function action_detail()
 	{
-		$this->add_style(array('detail'));
+		$this->add_detail_page_styles();
+		$this->add_detail_page_scripts();
 
-		// Add detail javascript file for ajax operations on this page
-		$this->add_js(array('detail'));
-
-		$current_answer = ORM::factory('post');
-		$comment = ORM::factory('post');
-
-		// Holds user posted answer form, to re-fill the answer form in case of any error etc.
-		$handled_post = array();
+		$current_answer = new Model_Answer;
 
 		if (($question_id = $this->request->param('id', 0)) === 0)
 			$this->request->redirect(Route::get('question')->uri());
-			
-		$this->template->content = View::factory($this->get_theme_directory() . 'question/detail')
-			->set('user_id', $this->user->id)
-			->set('id', $question_id)
-			->set('user_logged_in', $this->auth->logged_in())
-			->set('theme_dir', $this->get_theme_directory())
-			->set('token', $this->get_csrf_token())
+		
+		$this->template->content = $this->get_detail_page_view($question_id)
 			->bind('post', $question)
 			->bind('post_owner_info', $post_owner_info)
-			->bind('comment', $comment)
 			->bind('current_answer', $current_answer)
 			->bind('handled_post', $handled_post);
-			
-		if (($question = ORM::factory('post')->get($question_id)) === NULL)
+
+		if (($question = Model_Question::get($question_id)) === NULL)
 		{
 			$this->request->redirect(Route::get('error')->uri(array('action' => '404')));
 		}
 
-		// Handle view counts of this question
 		$this->handle_view_count_of_post($question);
 		 
-		// Get answers and comments of the question
-		$question->get_answers_and_comments();
+		$question->load_answers_and_comments();
 
 		$post_owner_info = $question->get_post_owner_info();
+		
+		$this->set_detail_page_meta_texts($question);
 
-		// If form is not submitted return, if posted, try to add the answer
 		if (!$post = $_POST)	return;
 
 		$handled_post = $this->add_new_answer($post, $current_answer, $question);
@@ -105,84 +86,57 @@ class Controller_Questions extends Controller_Template_Main {
 	/**
 	 * Add New Question Action.
 	 *
-	 * @uses Model_Post::add_question()
-	 * @uses Model_Post::handle_post_request()
-	 * @uses Model_Post::check_question()
+	 * @uses Model_Question::add()
+	 * @uses Model_Post::handle_submitted_post_data()
+	 * @uses Model_Question::check_question_title()
 	 */
 	public function action_ask()
 	{
-		// Holds errors
-		$errors = array();
 		$notify_user = FALSE;
 
-		$question = ORM::factory('post');
-			
-		$this->template->content = View::factory($this->get_theme_directory() . 'question/add')
-			->set('user_logged_in', $this->auth->logged_in())
-			->set('theme_dir', $this->get_theme_directory())
-			->set('token', $this->get_csrf_token())
+		$question = new Model_Question;
+
+		$this->template->content = $this->get_ask_page_view()
 			->bind('post', $question)
 			->bind('tag_list', $tag_list)
 			->bind('errors', $errors)
 			->bind('notify_user', $notify_user);
+			
+		$this->set_ask_page_meta_texts();
 
 		// If form is not submitted, show the add question form
 		if (!$post = $_POST)	return;
 
-		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
-		// If user just added the title, then show the full form filled with title
-		if (isset($_POST['hdn_post_title']) && $_POST['hdn_post_title'] === '1')
-		{
-			$question->title = trim($_POST['title']);
-			return;
-		}
-
-		// Do general process for posting model forms
-		$question->handle_post_request($post);
+		$question->handle_submitted_post_data($post);
 		$notify_user = $post['notify_user'] !== '0';
 
 		$question->values($post);
 
-		if (!$question->check_question($post))
+		$errors = array();
+		if (!$question->check_question_title($post, $errors))
 		{
-			$errors += array('question_add_error' => __('Question title must be at least 10 characters long.'));
-			$tag_list = (isset($post['tags']) && $post['tags'] !== '') ? $post['tags'] : '';
+			$tag_list = $this->create_taglist_from_posted_data($post);
 			return;
 		}
-
-		// Try to save the question
-		try {
-			$question_info = ORM::factory('post')->add_question($post);
-		}
-		catch (ORM_Validation_Exception $ex)
-		{
-			$errors += array('question_add_error' => $ex->errors('models'));
-			$tag_list = (isset($post['tags']) && $post['tags'] !== '') ? $post['tags'] : '';
-			return;
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Add Question | Message: ' . $ex->getMessage());
-				
-			$errors += array('question_add_error' => __('Question could not be added.'));
-			$tag_list = (isset($post['tags']) && $post['tags'] !== '') ? $post['tags'] : '';
-			return;
-		}
-
-		if ($question_info['id'] > 0)
-		{
+		
+		$add_result = $this->process_add_question($question, $post, $tag_list, $errors);
+		
+		if ($add_result === FALSE)	return;
+		
+		if ($question->id > 0)
 			$this->request->redirect(Route::get('question')->uri(
-				array('action'=>'detail', 'id' => $question_info['id'], 'slug' => $question_info['slug'])));
-		}
+				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
 	}
 
 	/**
 	 * Edit Question Action. Only registered users can edit a post.
 	 *
-	 * @uses Model_User::get_post_by_id()
-	 * @uses Model_Post::edit_question()
-	 * @uses Model_Post::generate_tag_list()
+	 * @uses Model_Question::get_user_question_by_id()
+	 * @uses Model_Question::edit()
+	 * @uses Model_Question::check_question_title()
+	 * @uses Model_Question::generate_tag_list()
 	 */
 	public function action_edit()
 	{
@@ -191,19 +145,15 @@ class Controller_Questions extends Controller_Template_Main {
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
-
-		$question = ORM::factory('post');
-
-		$this->template->content = View::factory($this->get_theme_directory() . 'question/edit')
-			->set('theme_dir', $this->get_theme_directory())
-			->set('token', $this->get_csrf_token())
+			
+		$this->template->content = $this->get_edit_page_view()
 			->bind('post', $question)
 			->bind('tag_list', $tag_list)
 			->bind('errors', $errors)
 			->bind('notify_user', $notify_user);
 
 		try {
-			$question = $this->user->get_post_by_id($question_id);
+			$question = Model_Question::get_user_question_by_id($question_id, $this->user);
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Question Edit:: ' . $ex->getMessage());
@@ -211,52 +161,37 @@ class Controller_Questions extends Controller_Template_Main {
 		}
 
 		$tag_list = $question->generate_tag_list();
-
-		// Holds errors
+		$notify_user = $question->notify_email !== '0';
 		$errors = array();
-		$notify_user = ($question->notify_email !== '0');
+		
+		$this->set_detail_page_meta_texts($question);
 
-		// If form is not submitted, show the add question form
 		if (!$post = $_POST)	return;
 
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
-		if (!$question->check_question($post))
+		if (!$question->check_question_title($post, $errors))
 		{
 			$question->title = $post['title'];
-			$errors += array('question_add_error' => __('Question title must be at least 10 characters long.'));
 			return;
 		}
 
-		// Do general process for posting model forms
-		$question->handle_post_request($post);
-			
-		// Try to update the question
-		try {
-			$question_info = $question->edit_question($post);
-		}
-		catch (ORM_Validation_Exception $ex)
-		{
-			$errors += array('question_edit_error' => $ex->errors('models'));
-			return;
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Edit Question | Message: ' . $ex->getMessage());
-				
-			$errors += array('question_edit_error' => __('Question could not be updated.'));
-			return;
-		}
+		$question->handle_submitted_post_data($post);
+		
+		$edit_result = $this->process_edit_question($question, $post, $errors);
+		
+		if ($edit_result === FALSE)	return;
 
 		$this->request->redirect(Route::get('question')->uri(
-			array('action'=>'detail', 'id' => $question_info['id'], 'slug' => $question_info['slug'])));
+			array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
 	}
 
 	/**
 	 * Delete Question Action.
 	 *
-	 * @uses Model_User::get_post_by_id()
-	 * @uses Model_Post::delete_question()
+	 * @uses Model_Question::get_user_question_by_id()
+	 * @uses Model_Question::delete()
 	 */
 	public function action_delete()
 	{
@@ -269,10 +204,8 @@ class Controller_Questions extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($_POST, 'token', ''));
 
-		// Try to get and delete question
 		try {
-			$question = $this->user->get_post_by_id($question_id);
-			$question->delete_question();
+			Model_Question::get_user_question_by_id($question_id, $this->user)->delete();
 		}
 		catch (Exception $ex) {
 			$msg = 'Exception::Delete Question | Message: ' . $ex->getMessage();
@@ -287,30 +220,23 @@ class Controller_Questions extends Controller_Template_Main {
 	/**
 	 * Used to display search results
 	 * 
-	 * @uses Model_Post::search()
+	 * @uses Model_Question::search()
 	 */
 	public function action_search()
 	{
 		if (($query = Arr::get($_GET, 'query', '')) === '')
 			$this->request->redirect(Route::get('question')->uri());
-
-		$this->template->content = View::factory($this->get_theme_directory() . 'question/index')
-			->set('user_id', $this->user->id)
+			
+		$this->template->content = $this->get_search_page_view()
 			->bind('posts', $posts)
 			->bind('total_questions', $total_posts)
 			->bind('pagination', $pagination);
 
-		// Get total posts count
-		$total_posts = ORM::factory('post')->count_search_results($query);
+		$pagination = $this->prepare_pagination_for_search(Model_Question::count_search_results($query));
 
-		// Prepare pagination control
-		$pagination = Pagination::factory(array(
-			'total_items' => $total_posts,
-			'items_per_page' => Kohana::config('config.default_search_page_size'),
-		));
-
-		// Get results
-		$posts = ORM::factory('post')->search($query, $pagination->items_per_page, $pagination->offset);
+		$posts = Model_Question::search($query, $pagination->items_per_page, $pagination->offset);
+		
+		$this->set_search_page_meta_texts($query);
 	}
 
 	/***** PRIVATE METHODS *****/
@@ -320,85 +246,150 @@ class Controller_Questions extends Controller_Template_Main {
 	 * Displays them with question/index view
 	 *
 	 * @param string indicates which action is called this method
-	 * @uses  Model_Post::count_posts()
-	 * @uses  Model_Post::get_questions()
+	 * @uses  Model_Question::get_questions()
 	 */
 	private function display_questions($requested_action)
 	{
-		$this->template->content = View::factory($this->get_theme_directory() . 'question/index')
-			->set('user_id', $this->user->id)
+		$this->template->content = $this->get_display_questions_page_view()
 			->bind('posts', $questions)
 			->bind('total_questions', $total_questions)
 			->bind('pagination', $pagination);
 
-		// Get total questions count
-		switch ($requested_action)
-		{
-			case 'action_unanswered':
-					$total_questions = ORM::factory('post')->count_posts(Helper_PostType::QUESTION
-						, Helper_PostStatus::UNANSWERED);
-				break;
-			case 'action_index':
-			case 'action_newest':
-			default:
-					$total_questions = ORM::factory('post')->count_posts(Helper_PostType::QUESTION);
-				break;
-		}
+		$total_questions = $this->get_total_questions($requested_action);
 
-		// Prepare pagination control
-		$pagination = Pagination::factory(array(
-			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_questions_page_size'),
-		));
+		$pagination = $this->prepare_pagination_for_display($total_questions);
 
-		// Get active questions
-		switch ($requested_action)
-		{
-			case 'action_index':
-					$questions = ORM::factory('post')->get_questions($pagination->items_per_page
-						, $pagination->offset, Helper_PostStatus::ANSWERED);
-				break;
-			case 'action_unanswered':
-					$questions = ORM::factory('post')->get_questions($pagination->items_per_page
-						, $pagination->offset, Helper_PostStatus::UNANSWERED);
-				break;
-			case 'action_newest':
-			default:
-					$questions = ORM::factory('post')->get_questions($pagination->items_per_page
-						, $pagination->offset);
-				break;
-		}
+		$questions = $this->get_active_questions($requested_action, $pagination);
+		
+		$this->set_display_page_meta_texts($requested_action);
+	}
+	
+	/**
+	 * Add stylesheet files to the template for detail page
+	 */
+	private function add_detail_page_styles()
+	{
+		$this->add_style(array('detail'));
+	}
+	
+	/**
+	 * Add javascript files to the template for detail page
+	 */
+	private function add_detail_page_scripts()
+	{
+		$this->add_js(array('detail'));
+	}
+	
+	/**
+	 * Returns view object for detail page
+	 * 
+	 * @param int question id
+	 * @return object
+	 */
+	private function get_detail_page_view($question_id)
+	{
+		return View::factory($this->get_theme_directory() . 'question/detail')
+			->set('user_id', $this->user->id)
+			->set('id', $question_id)
+			->set('user_logged_in', $this->auth->logged_in())
+			->set('theme_dir', $this->get_theme_directory())
+			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Returns view object for ask page
+	 * 
+	 * @return object
+	 */
+	private function get_ask_page_view()
+	{
+		return View::factory($this->get_theme_directory() . 'question/add')
+			->set('user_logged_in', $this->auth->logged_in())
+			->set('theme_dir', $this->get_theme_directory())
+			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Returns view object for edit page
+	 * 
+	 * @return object
+	 */
+	private function get_edit_page_view()
+	{
+		return View::factory($this->get_theme_directory() . 'question/edit')
+			->set('theme_dir', $this->get_theme_directory())
+			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Returns view object for search page
+	 * 
+	 * @return object
+	 */
+	private function get_search_page_view()
+	{			
+		return View::factory($this->get_theme_directory() . 'question/index')
+			->set('user_id', $this->user->id);
+	}
+	
+	/**
+	 * Returns view object for display questions page
+	 * 
+	 * @return object
+	 */
+	private function get_display_questions_page_view()
+	{			
+		return View::factory($this->get_theme_directory() . 'question/index')
+			->set('user_id', $this->user->id);
 	}
 
 	/**
 	 * Adds a new answer if the post is validated
 	 *
-	 * @param  array  Answer data
-	 * @param  object reference of Model_Post
-	 * @param  object Model_Post
-	 * @uses   Model_Post::handle_post_request()
-	 * @uses   Model_Post::add_answer()
+	 * @param  array  answer data
+	 * @param  object reference of Model_Answer
+	 * @param  object Model_Question
+	 * @uses   Model_Post::handle_submitted_post_data()
 	 * @return array
 	 */
 	private function add_new_answer($post, &$answer, $question)
-	{
-		$handled_post = array('errors' => array(),
-                     'notify_user' => (isset($post['notify_user']) && $post['notify_user'] !== '0'));
-			
+	{			
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
-		// Do general process for posting model forms
-		$answer->handle_post_request($post);
+		$answer->handle_submitted_post_data($post);
 
+		$add_answer_result = $this->process_add_answer($post, $answer, $question);
+
+		if ($add_answer_result === TRUE)
+		{
+			$this->request->redirect(Route::get('question')->uri(
+				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
+		}
+		
+		return $add_answer_result;
+	}
+	
+	/**
+	 * Processes adding answer action. Returns error list if any, otherwiser returns true.
+	 * 
+	 * @param  array  answer data
+	 * @param  object reference of Model_Answer
+	 * @param  object Model_Question
+	 * @uses   Model_Answer::insert()
+	 * @return mixed
+	 */
+	private function process_add_answer($post, &$answer, $question)
+	{
+		$handled_post = array('errors' => array(),
+                     'notify_user' => (isset($post['notify_user']) && $post['notify_user'] !== '0'));
+		
 		$answer->values($post);
 
-		// Try to save the answer
 		try {
-			$add_answer_result = ORM::factory('post')->add_answer($post, $question->id);
+			$add_answer_result = $answer->insert($post, $question->id);
 		}
-		catch (ORM_Validation_Exception $ex)
-		{
+		catch (ORM_Validation_Exception $ex) {
 			$handled_post['errors'] += array('answer_add_error' => $ex->errors('models'));
 			return $handled_post;
 		}
@@ -408,11 +399,201 @@ class Controller_Questions extends Controller_Template_Main {
 			$handled_post['errors'] += array('answer_add_error' => __('Answer could not be added.'));
 			return $handled_post;
 		}
-
-		if ($add_answer_result)
-		{
-			$this->request->redirect(Route::get('question')->uri(
-			array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
+		
+		return TRUE;
+	}
+	
+	/**
+	 * Creates taglist for the question.
+	 * 
+	 * @param array posted data
+	 * @return string
+	 */
+	private function create_taglist_from_posted_data($post)
+	{
+		return (isset($post['tags']) && $post['tags'] !== '') ? $post['tags'] : '';
+	}
+	
+	/**
+	 * Do process for adding question. Inserts it to the DB, returns false on error
+	 * 
+	 * @param  object reference of Model_Question
+	 * @param  array data
+	 * @param  string reference for tag list
+	 * @param  reference for errors array
+	 * @return boolean
+	 */
+	private function process_add_question(&$question, $post, &$tag_list, &$errors)
+	{
+		try {
+			$add_result = $question->insert($post);
 		}
+		catch (ORM_Validation_Exception $ex)
+		{
+			$errors += array('question_add_error' => $ex->errors('models'));
+			$tag_list = $this->create_taglist_from_posted_data($post);
+			return FALSE;
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Add Question | Message: ' . $ex->getMessage());
+				
+			$errors += array('question_add_error' => __('Question could not be added.'));
+			$tag_list = $this->create_taglist_from_posted_data($post);
+			return FALSE;
+		}
+		
+		return $add_result;
+	}
+	
+	/**
+	 * Do process for editing question. Updates it on the DB.
+	 * 
+	 * @param  object reference of Model_Question
+	 * @param  array data
+	 * @param  reference for errors array
+	 * @return boolean
+	 */
+	private function process_edit_question(&$question, $post, &$errors)
+	{
+		try {
+			$edit_result = $question->edit($post);
+		}
+		catch (ORM_Validation_Exception $ex)
+		{
+			$errors += array('question_edit_error' => $ex->errors('models'));
+			return FALSE;
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Edit Question | Message: ' . $ex->getMessage());
+				
+			$errors += array('question_edit_error' => __('Question could not be updated.'));
+			return FALSE;
+		}
+
+		return $edit_result;
+	}
+	
+	/**
+	 * Prepares pagination control for search page
+	 * 
+	 * @param  int total post count
+	 * @return object
+	 */
+	private function prepare_pagination_for_search($total_posts)
+	{
+		return Pagination::factory(array(
+			'total_items' => $total_posts,
+			'items_per_page' => Kohana::config('config.default_search_page_size'),
+		));
+	}
+	
+	/**
+	 * Returns total question count
+	 * 
+	 * @param string request action
+	 * @return int
+	 */
+	private function get_total_questions($requested_action)
+	{
+		switch ($requested_action)
+		{
+			case 'action_unanswered':
+				return ORM::factory('post')->count_unanswered_posts(Model_Post::QUESTION);
+			case 'action_index':
+			case 'action_newest':
+			default:
+				return ORM::factory('post')->count_all_posts(Model_Post::QUESTION);
+		}
+	}
+	
+	/**
+	 * Prepares pagination control for displaying questions page
+	 * 
+	 * @param  int total post count
+	 * @return object
+	 */
+	private function prepare_pagination_for_display($total_questions)
+	{
+		return Pagination::factory(array(
+			'total_items' => $total_questions,
+			'items_per_page' => Kohana::config('config.default_questions_page_size'),
+		));
+	}
+	
+	/**
+	 * Gets active questions to display
+	 * 
+	 * @param  string request action
+	 * @param  objecy instance of Pagination
+	 * @return array
+	 */
+	private function get_active_questions($requested_action, $pagination)
+	{
+		switch ($requested_action)
+		{
+			case 'action_index':
+				return Model_Question::get_questions($pagination->items_per_page
+					, $pagination->offset, Helper_PostStatus::ANSWERED);
+			case 'action_unanswered':
+				return Model_Question::get_questions($pagination->items_per_page
+					, $pagination->offset, Helper_PostStatus::UNANSWERED);
+			case 'action_newest':
+			default:
+				return Model_Question::get_questions($pagination->items_per_page
+					, $pagination->offset);
+		}
+	}
+	
+	/**
+	 * Sets template's meta fields for detail page
+	 * 
+	 * @param object Model_Question instance
+	 */
+	private function set_detail_page_meta_texts($question)
+	{
+		$this->prepare_metas($question->title, $question->content);
+	}
+
+	/**
+	 * Sets template's meta fields for ask question page
+	 */
+	private function set_ask_page_meta_texts()
+	{
+		$this->prepare_metas(__('Ask a Question'), 'Ask a question on this question and answer website');
+	}
+
+	/**
+	 * Sets template's meta fields for search page
+	 */
+	private function set_search_page_meta_texts($query)	{
+		$this->prepare_metas($query . __(' Related Questions')
+			, $query . 'related contents on this question and answer website');
+	}
+	
+	/**
+	 * Sets template's meta fields for display page
+	 * 
+	 * @param string request action
+	 */
+	private function set_display_page_meta_texts($requested_action)
+	{
+		switch ($requested_action)
+		{
+			case 'action_index':
+				$title = __('Latest Answered Questions');
+				$desc = __('Here is Latest Answered Questions on Q & A website.');
+				break;
+			case 'action_unanswered':
+				$title = __('Unanswered Questions');
+				$desc = __('Latest Unanswered Questions on Q & A website.');
+				break;
+			case 'action_newest':
+			default:
+				$title = __('Latest Questions');
+				$desc = __('Here is Latest Questions on Q & A website.');
+				break;
+		}
+		
+		$this->prepare_metas($title, $desc);
 	}
 }

@@ -22,10 +22,7 @@ class Kohana_Exception extends Kohana_Kohana_Exception {
 		{
 			Kohana::$log->add(Log::ERROR, parent::text($e));
 
-			$attributes = array
-			(
-                    'action'  => 500,
-			);
+			$attributes = array('action'  => 500,);
 
 			if ($e instanceof HTTP_Exception)
 			{

@@ -38,7 +38,7 @@
 			
 			<?php
 				$tags_html = '';
-				foreach ($post->tags->find_all() as $tag)
+				foreach ($post->get_tags() as $tag)
 				{
 					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value));
 				}

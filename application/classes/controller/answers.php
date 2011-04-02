@@ -21,9 +21,9 @@ class Controller_Answers extends Controller_Template_Main {
 	/**
 	 * Answer Edit Page. Only registered users can edit a post.
 	 *
-	 * @uses Model_User::get_post_by_id()
-	 * @uses Model_Post::handle_post_request()
-	 * @uses Model_Post::edit_answer()
+	 * @uses Model_Answer::get_user_answer_by_id()
+	 * @uses Model_Post::handle_submitted_post_data()
+	 * @uses Model_Answer::edit()
 	 */
 	public function action_edit()
 	{
@@ -34,18 +34,13 @@ class Controller_Answers extends Controller_Template_Main {
 			$this->request->redirect(Route::get('question')->uri());
 		}
 
-		$answer = ORM::factory('post');
-
-		$this->template->content = View::factory($this->get_theme_directory() . 'answer/edit')
-			->set('question_id', $question_id)
-			->set('theme_dir', $this->get_theme_directory())
-			->set('token', $this->get_csrf_token())
+		$this->template->content = $this->get_edit_page_view($question_id)
 			->bind('post', $answer)
 			->bind('errors', $errors)
 			->bind('notify_user', $notify_user);
 
 		try {
-			$answer = $this->user->get_post_by_id($answer_id, Helper_PostType::ANSWER);
+			$answer = Model_Answer::get_user_answer_by_id($answer_id, $this->user);
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Answer Edit:: ' . $ex->getMessage());
@@ -55,8 +50,7 @@ class Controller_Answers extends Controller_Template_Main {
 		// If answer's parent post id is not equal to requested question id, redirect user to question list
 		if ($answer->parent_post_id !== $question_id)
 			$this->request->redirect(Route::get('question')->uri());
-		 
-		// Holds errors
+
 		$errors = array();
 		$notify_user = ($answer->notify_email !== '0');
 		 
@@ -66,38 +60,25 @@ class Controller_Answers extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
-		// Do general process for posting model forms
-		$answer->handle_post_request($post);
+		$answer->handle_submitted_post_data($post);
 
-		// Try to update the answer
-		try {
-			$question_slug = $answer->edit_answer($post);
-		}
-		catch (ORM_Validation_Exception $ex)
-		{
-			$errors += array('answer_edit_error' => $ex->errors('models'));
-			return;
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Edit Answer | Message: ' . $ex->getMessage());
-				
-			$errors += array('answer_edit_error' => __('Answer could not be updated.'));
-			return;
-		}
+		$parent_question = $this->process_edit_answer($answer, $post, $errors);
+		
+		if ($parent_question === FALSE)	return;
 
 		$this->request->redirect(Route::get('question')->uri(
-			array('action'=>'detail', 'id' => $question_id, 'slug' => $question_slug)));
+			array('action'=>'detail', 'id' => $parent_question->id, 'slug' => $parent_question->slug)));
 	}
 
 	/**
 	 * Delete Answer Action.
 	 *
-	 * @uses Model_User::get_post_by_id()
-	 * @uses Model_Post::delete_answer()
+	 * @uses Model_Answer::get_user_answer_by_id()
+	 * @uses Model_Answer::delete()
 	 */
 	public function action_delete()
 	{
-		// If answer id and question id is not supplied or user is not logged in, redirect to the question list
+		// If answer id or question id is not supplied or user is not logged in, redirect to the question list
 		if (($answer_id = Arr::get($_POST, 'id', 0)) === 0 ||
 			($question_id = Arr::get($_POST, 'parent_id', 0)) === 0 || !$this->auth->logged_in())
 		{
@@ -107,19 +88,77 @@ class Controller_Answers extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($_POST, 'token', ''));
 
-		// Try to get and delete the answer
-		try {
-			$answer = $this->user->get_post_by_id($answer_id, Helper_PostType::ANSWER);
+		$parent_question = $this->process_delete_answer($answer_id);
+		
+		if ($parent_question === NULL)	return;
 
-			$question_slug = $answer->delete_answer();
+		$this->request->redirect(Route::get('question')->uri(
+			array('action'=>'detail', 'id' => $parent_question->id, 'slug' => $parent_question->slug)));
+	}
+
+	/***** PRIVATE METHODS *****/
+	
+	/**
+	 * Returns view object for edit page
+	 * 
+	 * @param int question id
+	 * @return object
+	 */
+	private function get_edit_page_view($question_id)
+	{			
+		return View::factory($this->get_theme_directory() . 'answer/edit')
+			->set('question_id', $question_id)
+			->set('theme_dir', $this->get_theme_directory())
+			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Do process for editing answer. Updates it on the DB
+	 * 
+	 * @param  object reference of Model_Answer
+	 * @param  array data
+	 * @param  reference for errors array
+	 * @return mixed
+	 */
+	private function process_edit_answer(&$answer, $post, &$errors)
+	{
+		try {
+			$parent_question = $answer->edit($post);
+		}
+		catch (ORM_Validation_Exception $ex)
+		{
+			$errors += array('answer_edit_error' => $ex->errors('models'));
+			return FALSE;
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Edit Answer | Message: ' . $ex->getMessage());
+				
+			$errors += array('answer_edit_error' => __('Answer could not be updated.'));
+			return FALSE;
+		}
+		
+		return $parent_question;
+	}
+	
+	/**
+	 * Do process for deleting an answer. Updates it on the DB
+	 * 
+	 * @param int answer id
+	 * @return mixed
+	 */
+	private function process_delete_answer($answer_id)
+	{
+		try {
+			$parent_question = Model_Answer::get_user_answer_by_id($answer_id, $this->user)->delete();
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Delete Answer | Message: ' . $ex->getMessage());
 
 			Message::set(Message::ERROR, __('Oops. Something went wrong, please try again.'));
+			
+			return FALSE;
 		}
-
-		$this->request->redirect(Route::get('question')->uri(
-			array('action'=>'detail', 'id' => $question_id, 'slug' => $question_slug)));
+		
+		return $parent_question;
 	}
 }

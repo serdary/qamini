@@ -103,9 +103,11 @@ h2 {
     text-decoration: underline;
 }
 .wrapper .footer .qamini-credit a,
-.wrapper .footer .qamini-credit a:visited,
-.wrapper .footer .footer-nav-item a:visited {
+.wrapper .footer .qamini-credit a:visited {
     text-decoration: underline;
+	color: #444444;
+}
+.wrapper .footer .footer-nav-item a:visited {
 	color: #444444;
 }
 .wrapper .footer .qamini-credit {
@@ -244,26 +246,26 @@ h2 {
 }
 .questions-holder .asked-by {
 }
-.questions-holder .pagination-holder {
+.pagination-holder {
     clear: both;
     padding: 15px 0;
 }
-.questions-holder .pagination-holder strong,
-.questions-holder .pagination-holder a {
+.pagination-holder strong,
+.pagination-holder a {
     border: 1px solid #0F649A;
     font-weight: bold;
     margin-right: 5px;
     padding: 3px 6px;
     text-decoration: none;
 }
-.questions-holder .pagination-holder strong{
+.pagination-holder strong{
     background-color: #EEEEEE;
     color: #000000;
 }
-.questions-holder .pagination-holder a {
+.pagination-holder a {
     color: #0F649A;
 }
-.questions-holder .pagination-holder a:hover {
+.pagination-holder a:hover {
     color: #FFFFFF;
     background-color: #0F649A;    
 }
@@ -361,4 +363,9 @@ h2 {
 .success-div {
     color: #12C94E;
     margin: 2px 0;
+}
+.tag-info {
+	clear:both;
+	float:left;
+	margin:10px 0 0 120px;
 }

@@ -5,6 +5,7 @@
  * @package   qamini
  * @since     0.2.0
  * @author    Serdar Yildirim
+ * @deprecated
  */
 class Helper_Mailer {
 	

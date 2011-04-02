@@ -8,7 +8,7 @@
  * @since     0.1.0
  * @author    Serdar Yildirim
  */
-class Model_Post extends ORM {
+ class Model_Post extends ORM {
 
 	// Auto-update column for creation and update
 	protected $_created_column = array('column' => 'created_at', 'format' => TRUE);
@@ -17,22 +17,18 @@ class Model_Post extends ORM {
 	protected $_belongs_to = array('user' => array());
 
 	protected $_has_many = array('tags' => array('model' => 'tag', 'through' => 'post_tag'));
+	
+	protected $_table_name = 'posts';
 
+	const QUESTION = 'question';
+	const ANSWER = 'answer';
+	const COMMENT = 'comment';
+	
 	/**
-	 * Holds the answers of the post
-	 *
-	 * @var array
+	 * Validation rules for post object
+	 * 
+	 * @see Kohana_ORM::rules()
 	 */
-	public $answers = array();
-
-	/**
-	 * Holds the comments of the post
-	 *
-	 * @var array
-	 */
-	public $comments = array();
-
-	// Validation rules
 	public function rules()
 	{
 		return array(
@@ -43,6 +39,11 @@ class Model_Post extends ORM {
 		);
 	}
 	
+	/**
+	 * Filters for post object
+	 * 
+	 * @see Kohana_ORM::filters()
+	 */
 	public function filters()
 	{
 	    return array(
@@ -53,41 +54,38 @@ class Model_Post extends ORM {
 	}
 
 	/**
-	 * Returns post by id and type
+	 * Returns post by id
 	 *
-	 * @param  int    post id
-	 * @param  string post type, default is 'question'
-	 * @return object instance of Model_Post
+	 * @param int post id
+	 * @return object
 	 */
-	public function get($id, $post_type = Helper_PostType::QUESTION)
+	public static function get($id)
 	{
-		if ($post_type !== Helper_PostType::ALL)
-		{
-			$post = ORM::factory('post')
-				->where('id', '=', $id)
-				->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-				->and_where('post_type','=' , $post_type)->find();
-		}
-		else
-		{
-			$post = ORM::factory('post')
-				->where('id', '=', $id)
-				->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)->find();
-		}
-			
-		if (!$post->loaded())
-		{
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the post by ID: ' . $id);
-			return NULL;
-		}
-
-		return $post;
+		$post = ORM::factory('post')
+			->where('id', '=', $id)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)->find();
+		
+		return Model_Post::object_loaded($post, $id) ? $post : NULL;
+	}
+	
+ 	/**
+	 * Checks if an object is loaded
+	 * 
+	 * @param object obj
+	 * @param int
+	 */
+	protected static function object_loaded($obj, $id)
+	{
+		if ($obj->loaded())	return TRUE;
+		
+		Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the post by ID: ' . $id);
+		return FALSE;
 	}
 
 	/**
-	 * Returns the truncated post content
+	 * Truncates post content string and returns it
 	 * 
-	 * @return string truncated post content
+	 * @return string
 	 */
 	public function content_excerpt()
 	{
@@ -96,9 +94,9 @@ class Model_Post extends ORM {
 	}
 
 	/**
-	 * Returns post content
+	 * Change new lines to breaks and returns post content
 	 * 
-	 * @return string post content
+	 * @return string
 	 */
 	public function get_post_content()
 	{
@@ -112,489 +110,105 @@ class Model_Post extends ORM {
 	 */
 	public function get_post_owner_info()
 	{
-		if (isset($this->created_by))
-			return array('created_by' => $this->created_by, 'id' => NULL);
+		if ($this->is_post_created_by_user())	return $this->create_user_post_owner_info();
+		
+		if ($this->is_post_created_by_guest())	return $this->create_guest_post_owner_info();
 
-		if (!isset($this->created_by) && $this->user_id > 0)
-		{
-			if($this->user->loaded() && $this->user->id > 0)
-				return array('created_by' => $this->user->username, 'id' => $this->user->id);
-				
-			return array('created_by' => 'anonymous', 'id' => NULL);
-		}
-
-		return array('created_by' => 'anonymous', 'id' => NULL);
+		return array('created_by' => __('anonymous'), 'id' => NULL);
+	}
+	
+	/**
+	 * Checks if the post is created by a guest
+	 *
+	 * @return boolean
+	 */
+	private function is_post_created_by_guest()
+	{
+		return (isset($this->created_by) && $this->created_by !== '');
+	}
+	
+	/**
+	 * Checks if the post is created by a user
+	 *
+	 * @return boolean
+	 */
+	private function is_post_created_by_user()
+	{
+		return !isset($this->created_by) && $this->user->loaded() && $this->user_id > 0;
+	}
+	
+	/**
+	 * Returns post's quest owner information
+	 *
+	 * @return array
+	 */
+	private function create_guest_post_owner_info()
+	{
+		return array('created_by' => $this->created_by, 'id' => NULL);
+	}
+	
+	/**
+	 * Returns post's user owner information
+	 *
+	 * @return array
+	 */
+	private function create_user_post_owner_info()
+	{
+		return array('created_by' => $this->user->username, 'id' => $this->user->id);
 	}
 
 	/**
 	 * Returns total count of the 'valid' posts
 	 *
 	 * @param  string post type
-	 * @param  string status of the posts that will be count
 	 * @return int
 	 */
-	public function count_posts($post_type, $status = Helper_PostStatus::ALL)
+	public function count_all_posts($post_type)
 	{
-		$this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
 			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', $post_type);
-
-		switch ($status)
-		{
-			case Helper_PostStatus::ANSWERED:
-				return $this->and_where('answer_count', '>', 0)->count_all();
-			case Helper_PostStatus::UNANSWERED:
-				return $this->and_where('answer_count', '=', 0)->count_all();
-			default:
-				return $this->count_all();
-		}
+			->and_where('post_type', '=', $post_type)->count_all();
 	}
 
-	/* Question Methods */
-
 	/**
-	 * Returns questions according to post status, page size and offset
+	 * Returns total answered count of the 'valid' posts
 	 *
-	 * @param  int    page size
-	 * @param  int    offset
-	 * @param  string status of the posts that will be count
-	 * @return array  Model_Post objects
+	 * @param  string post type
+	 * @return int
 	 */
-	public function get_questions($page_size, $offset, $status = Helper_PostStatus::ALL)
+	public function count_answered_posts($post_type)
 	{
-		$this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
 			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Helper_PostType::QUESTION)
-			->limit($page_size)
-			->offset($offset);
-
-		switch ($status)
-		{
-			case Helper_PostStatus::ANSWERED:
-				return $this->order_by('answer_count', 'desc')
-					->order_by('latest_activity', 'desc')->find_all();
-			case Helper_PostStatus::UNANSWERED:
-				return $this->and_where('answer_count', '=', 0)
-					->order_by('latest_activity', 'desc')->find_all();
-			default:
-				return $this->order_by('latest_activity', 'desc')->find_all();
-		}
+			->and_where('post_type', '=', $post_type)
+			->and_where('answer_count', '>', 0)->count_all();
 	}
 
 	/**
-	 * Adds a new question
+	 * Returns total unanswered count of the 'valid' posts
 	 *
-	 * @param  array new question data
-	 * @uses   Model_Post::create_post()
-	 * @uses   Model_Post::add_tags()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return array id => question id, slug => question slug
+	 * @param  string post type
+	 * @return int
 	 */
-	public function add_question($post)
+	public function count_unanswered_posts($post_type)
 	{
-		$question = new Model_Post;
-			
-		$question->create_post($post, Helper_PostType::QUESTION);
-
-		// Process tags for this question
-		try {
-			if (isset($post['tags']))
-				$question->add_tags($post['tags']);
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::add_tags(): ' . $ex->getMessage());
-		}
-
-		return array('id' => $question->id, 'slug' => $question->slug);
-	}
-
-	/**
-	 * Used to edit a question
-	 *
-	 * @param  array posted question data
-	 * @uses   Model_Post::save_post()
-	 * @uses   Model_Post::update_tags()
-	 * @uses   Model_User::update_user_info()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return array id => question id, slug => question slug
-	 */
-	public function edit_question($post)
-	{
-		// Currently only logged in users can edit questions.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::edit_question(): Could not get current user');
-
-		$this->save_post($post);
-
-		// Process tags for this question
-		if (isset($post['tags']))
-			$this->update_tags($post['tags']);
-			
-		// Update current user's latest activity time
-		$user->update_user_info(array('latest_activity'));
-			
-		return array('id' => $this->id, 'slug' => $this->slug);
-	}
-
-	/**
-	 * Used to delete a question
-	 *
-	 * @uses   Model_Post::mark_post_anonymous()
-	 * @uses   Model_Post::handle_reputation()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 */
-	public function delete_question()
-	{
-		// Currently only logged in users can delete questions.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::delete_question(): Could not get current user');
-
-		// The question marked anonymous (user_id = 0) instead of marked deleted.
-		$this->mark_post_anonymous();
-
-		/*
-		 * Delete user 'create question' reputation entry.
-		 * Decrease user's reputation by 'create_question' reputation point
-		 */
-		$this->handle_reputation(Helper_ReputationType::QUESTION_ADD, true);
-	}
-
-	/**
-	 * Returns a question's tags seperated with a comma
-	 * Used for editing question action
-	 */
-	public function generate_tag_list()
-	{
-		$tag_list = '';
-		foreach ($this->tags->find_all() as $tag)
-		{
-			$tag_list .= $tag->value . ',';
-		}
-
-		return ($tag_list === '') ? $tag_list : substr($tag_list, 0, -1);
-	}
-
-	/**
-	 * Checks new question data
-	 *
-	 * @param array values to check
-	 */
-	public function check_question(&$post)
-	{
-		$post['title'] = trim($post['title']);
-
-		return (isset($post['title']) && $post['title'] !== '' && (strlen($post['title']) > 10));
-	}
-
-	/* Answer Methods */
-
-	/**
-	 * Gets answers of the question
-	 *
-	 * @uses Model_Post::create_object()
-	 */
-	public function get_answers()
-	{
-		$db_result = ORM::factory('post')
-			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
 			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Helper_PostType::ANSWER)
-			->and_where('parent_post_id', '=', $this->id)
-			->order_by('latest_activity', 'desc')
-			->find_all();
-
-		foreach ($db_result as $answer)
-		{
-			// If the answer is accepted, add it to the top of the answers array
-			if ($answer->post_status === Helper_PostStatus::ACCEPTED)
-			{
-				array_unshift($this->answers, $this->create_object($answer));
-			}
-			else
-			{
-				$this->answers[] = $this->create_object($answer);
-			}
-		}
+			->and_where('post_type', '=', $post_type)
+			->and_where('answer_count', '=', 0)->count_all();
 	}
-
-	/**
-	 * Gets answers and comments of the question
-	 *
-	 * @uses Model_Post::get_answers()
-	 */
-	public function get_answers_and_comments()
-	{
-		$this->get_answers();
-
-		$parent_ids = array();
-		$parent_ids[] = $this->id;
-
-		foreach ($this->answers as $answer)
-		{
-			$parent_ids[] = $answer->id;
-		}
-
-		$results = ORM::factory('post')
-			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Helper_PostType::COMMENT)
-			->and_where('parent_post_id', 'IN', DB::Expr(sprintf('(%s)', implode(',', $parent_ids))))
-			->order_by('latest_activity', 'desc')
-			->find_all();
-
-		foreach ($results as $comment)
-		{
-			if ($comment->parent_post_id === $this->id)
-			{
-				$this->comments[] = $comment;
-				continue;
-			}
-
-			foreach ($this->answers as $answer)
-			{
-				if ($comment->parent_post_id === $answer->id)
-				{
-					$answer->comments[] = $comment;
-					break;
-				}
-			}
-		}
-	}
-
-	/**
-	 * Adds a new answer to a question
-	 *
-	 * @param  array New answer data
-	 * @param  int Question id
-	 * @uses   Model_Post::create_post()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return bool
-	 */
-	public function add_answer($post, $question_id)
-	{
-		$answer = new Model_Post;
-			
-		$answer->parent_post_id = $question_id;
-
-		$answer->create_post($post, Helper_PostType::ANSWER);
-			
-		return TRUE;
-	}
-
-	/**
-	 * Used to edit an answer
-	 *
-	 * @param  array posted answer data
-	 * @uses   Model_Post::save_post()
-	 * @uses   Model_Post::get()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return string question slug
-	 */
-	public function edit_answer($post)
-	{
-		// Currently only logged in users can edit answer.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::edit_answer(): Could not get current user');
-
-		$this->save_post($post);
-			
-		// Update current user's latest activity time
-		$user->update_user_info(array('latest_activity'));
-
-		if (($parent_post = ORM::factory('post')->get($this->parent_post_id)) === NULL)
-			return '';
-
-		return $parent_post->slug;
-	}
-
-	/**
-	 * Used to delete an answer
-	 *
-	 * @uses   Model_Post::mark_post_anonymous()
-	 * @uses   Model_Post::handle_reputation()
-	 * @uses   Model_Post::get()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return string empty or parent post slug
-	 */
-	public function delete_answer()
-	{
-		// Currently only logged in users can delete answers.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::delete_answer(): Could not get current user');
-
-		// Mark answer anonymous
-		$this->mark_post_anonymous();
-
-		// Delete user 'create answer' reputation entry.
-		// Decrease user's reputation by 'create_answer' reputation point
-		$this->handle_reputation(Helper_ReputationType::ANSWER_ADD, true);
-
-		// Decrease parent question's answer count
-		// $this->update_parent_stats(FALSE);
-			
-		if (($parent_post = ORM::factory('post')->get($this->parent_post_id)) === NULL)
-			return '';
-
-		return $parent_post->slug;
-	}
-
-	/* Comment Methods */
-
-	/**
-	 * Adds new comment to a post (Question Or Answer)
-	 *
-	 * @param  array New answer data
-	 * @param  int Parent id
-	 * @uses   Model_Post::create_post()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return int new comment id on success
-	 */
-	public function add_comment($post, $parent_id)
-	{
-		// Currently only logged in users can add comments
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::add_comment(): Could not get current user');
-
-		$comment = new Model_Post;
-
-		$comment->parent_post_id = $parent_id;
-			
-		// Add user id to the post
-		$post['user_id'] = $user->id;
-
-		$comment->create_post($post, Helper_PostType::COMMENT);
-			
-		return $comment->id;
-	}
-
-	/**
-	 * Used to delete a comment
-	 *
-	 * @uses   Model_Post::handle_reputation()
-	 * @uses   Model_Post::update_parent_stats()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 */
-	public function delete_comment()
-	{
-		// Currently only logged in users can delete comments.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::delete_comment(): Could not get current user');
-
-		$this->latest_activity = time();
-		$this->post_moderation = Helper_PostModeration::DELETED;
-
-		if (!$this->save())
-			throw new Kohana_Exception('Model_Post::delete_comment(): Could not delete comment with ID: ' . $this->id);
-			
-		$this->handle_reputation(Helper_ReputationType::COMMENT_ADD, true);
-
-		// update parent question's comment count
-		$this->update_parent_stats(FALSE);
-	}
-
-	/* Search Methods */
-
-	/**
-	 * Counts posts which are relevant to query string
-	 *
-	 * @param  string query string
-	 * @return int result count
-	 */
-	public function count_search_results($query)
-	{
-		if ($query === NULL || $query === '')
-			return;
-			
-		return $this->and_where_open()
-			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Helper_PostType::QUESTION)
-			->and_where_close()
-			->and_where_open()
-			->or_where('title', 'LIKE', '%' . $query . '%')
-			->or_where('content', 'LIKE', '%' . $query . '%')
-			->and_where_close()
-			->count_all();
-	}
-
-	/**
-	 * Search DB to find relevant posts
-	 *
-	 * @param  string query string
-	 * @param  int    page size
-	 * @param  int    offset
-	 * @return array  Model_Post objects
-	 */
-	public function search($query, $page_size, $offset)
-	{
-		return $this->and_where_open()
-			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Helper_PostType::QUESTION)
-			->and_where_close()
-			->and_where_open()
-			->or_where('title', 'LIKE', '%' . $query . '%')
-			->or_where('content', 'LIKE', '%' . $query . '%')
-			->and_where_close()
-			->order_by('latest_activity', 'desc')
-			->limit($page_size)
-			->offset($offset)
-			->find_all();
-	}
-
-	/* Voting Methods */
-
+	
 	/**
 	 * Increase upvote / downvote count of the post and handles reputation
 	 *
-	 * @param  int vote type 0 for down, 1 for up votes
-	 * @uses   Model_Post::check_user_previous_votes()
+	 * @param  string reputation type
+	 * @param  string reputation type for owner
 	 * @uses   Model_Post::handle_reputation()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return int 1 => Success, -2 => User is already voted
+	 * @throws ORM_Validation_Exception
+	 * @return int 1 => Success
 	 */
-	public function vote_post($vote_type)
+	public function vote_post($reputation_type, $reputation_type_owner)
 	{
-		// Check if user voted this post before, if so do the appropriate actions.
-		$previous_votes = $this->check_user_previous_votes($vote_type);
-
-		if ($previous_votes !== 1)
-			return $previous_votes;
-
-		if ($vote_type === 0)
-		{
-			$this->down_votes++;
-
-			if ($this->post_type === Helper_PostType::QUESTION)
-			{
-				$reputation_type = Helper_ReputationType::QUESTION_VOTE_DOWN;
-				$reputation_type_owner = Helper_ReputationType::OWN_QUESTION_VOTED_DOWN;
-			}
-			elseif ($this->post_type === Helper_PostType::ANSWER)
-			{
-				$reputation_type = Helper_ReputationType::ANSWER_VOTE_DOWN;
-				$reputation_type_owner = Helper_ReputationType::OWN_ANSWER_VOTED_DOWN;
-			}
-		}
-		else
-		{
-			$this->up_votes++;
-
-			if ($this->post_type === Helper_PostType::QUESTION)
-			{
-				$reputation_type = Helper_ReputationType::QUESTION_VOTE_UP;
-				$reputation_type_owner = Helper_ReputationType::OWN_QUESTION_VOTED_UP;
-			}
-			elseif ($this->post_type === Helper_PostType::ANSWER)
-			{
-				$reputation_type = Helper_ReputationType::ANSWER_VOTE_UP;
-				$reputation_type_owner = Helper_ReputationType::OWN_ANSWER_VOTED_UP;
-			}
-		}
-
-		if (!isset($reputation_type) || !isset($reputation_type_owner))
-			throw new Kohana_Exception('Model_Post::vote_post(): Wrong post type posted!');
-
 		$this->save();
 
 		$this->handle_reputation($reputation_type);
@@ -604,256 +218,141 @@ class Model_Post extends ORM {
 	}
 
 	/**
-	 * Accepts / Undo accepts an answer
-	 *
-	 * @uses   Model_Post::handle_reputation()
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 * @return int 1 => Accepted, 2 => Undo Accept, -1 => Error, -2 => Already Accepted An Answer
-	 */
-	public function accept_post()
-	{
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Post::accept_post(): Could not get current user');
-			
-		if ($this->post_moderation === Helper_PostModeration::DELETED)
-			return -1;
-
-		// Get the parent question to check its creator is the same as current user
-		$question = ORM::factory('post')->get($this->parent_post_id, Helper_PostType::QUESTION);
-		if ($question === NULL || $question->user_id !== $user->id)
-			return -1;
-
-		// If the post has been accepted before, undo accept
-		if ($this->post_status === Helper_PostStatus::ACCEPTED)
-		{
-			$this->post_status = Helper_PostStatus::PUBLISHED;
-			$this->save();
-
-			$this->handle_reputation(Helper_ReputationType::ACCEPTED_ANSWER, TRUE);
-			$this->handle_reputation(Helper_ReputationType::OWN_ACCEPTED_ANSWER, TRUE);
-
-			return 2;
-		}
-		else
-		{
-			// Check if another answer is already chosen as accepted answer
-			if ($this->check_accepted_posts())
-			return -2;
-
-			$this->post_status = Helper_PostStatus::ACCEPTED;
-			$this->save();
-
-			$this->handle_reputation(Helper_ReputationType::ACCEPTED_ANSWER);
-			$this->handle_reputation(Helper_ReputationType::OWN_ACCEPTED_ANSWER);
-
-			return 1;
-		}
-
-		return -1;
-	}
-
-	/**
 	 * Used format a field of Model_Post object.
 	 * Currently values are formatted if they are above 1000, no matter what type stat is.
 	 *
 	 * @param  string stat type
-	 * @return string formatted stat number
+	 * @return string
 	 */
 	public function format_stat($stat_type = Helper_StatType::VIEW_COUNT)
 	{
-		// Numbers can be formatted according to their stat type later.
-
 		switch ($stat_type)
 		{
 			case Helper_StatType::ANSWER_COUNT:
-				$value = $this->answer_count;
-				break;
+				return $this->create_shortened_stat_number($this->answer_count);
 			case Helper_StatType::COMMENT_COUNT:
-				$value = $this->comment_count;
-				break;
+				return $this->create_shortened_stat_number($this->comment_count);
 			case Helper_StatType::OVERALL_VOTE:
-				$value = $this->up_votes - $this->down_votes;
-				break;
+				return $this->create_shortened_stat_number($this->up_votes - $this->down_votes);
 			default:
-				$value = $this->view_count;
-				break;
+				return $this->create_shortened_stat_number($this->view_count);
 		}
-
-		$tmp = floor($value / 1000);
-
-		return ($tmp > 0) ? $tmp . ' K' : $value;
+	}
+	
+	/**
+	 * Returns shortened given stat value
+	 * 
+	 * @param int value
+	 * @return string
+	 */
+	private function create_shortened_stat_number($value)
+	{
+		return (floor($value / 1000) > 0) ? floor($value / 1000) . ' K' : $value;
 	}
 
 	/**
 	 * Returns the relative creation time of the post. (According to now)
 	 * 
-	 * @return string relative time
+	 * @return string
 	 */
 	public function get_relative_creation_time()
 	{
-		//TODO: so ugly, refactor!
-		if (($diff = time() - $this->created_at) <= 0)
-			return __('just now!');
-
-		$minute_in_seconds = 60;
-		$hour_in_seconds = $minute_in_seconds * 60;
-		$day_in_seconds = $hour_in_seconds * 24;
-		$month_in_seconds = $day_in_seconds * 30;	// Not so true, need to update
-		$year_in_seconds = $month_in_seconds * 12;	// Not so true, need to update
-
-		$year = floor($diff / $year_in_seconds);
-		$total_seconds = $year * $year_in_seconds;
-
-		$month = floor(($diff - $total_seconds) / $month_in_seconds);
-		$total_seconds += $month * $month_in_seconds;
-
-		$day = floor(($diff - $total_seconds) / $day_in_seconds);
-		$total_seconds += $day * $day_in_seconds;
-
-		$hour = floor(($diff - $total_seconds) / $hour_in_seconds);
-		$total_seconds += $hour * $hour_in_seconds;
-
-		$minute = floor(($diff - $total_seconds) / $minute_in_seconds);
-		$total_seconds += $minute * $minute_in_seconds;
-
-		$second = $diff - $total_seconds;
-
-		$date_tmp2 = '%d %s, %d %s ago';
-		$date_tmp1 = '%d %s ago';
-
-		if ($year > 0)
-			return ($month > 0) 
-				? sprintf($date_tmp2, $month, Inflector::plural('month', $month), $year, Inflector::plural('year', $year))
-				: sprintf($date_tmp1, $year, Inflector::plural('year', $year));
-
-		if ($month > 0)
-			return ($day > 0) 
-				? sprintf($date_tmp2, $day, Inflector::plural('day', $day), $month, Inflector::plural('month', $month))
-				: sprintf($date_tmp1, $month, Inflector::plural('month', $month));
-
-		if ($day > 0)
-			return ($hour > 0) 
-				? sprintf($date_tmp2, $hour, Inflector::plural('hour', $hour), $day, Inflector::plural('day', $day))
-				: sprintf($date_tmp1, $day, Inflector::plural('day', $day));
-
-		if ($hour > 0)
-			return ($minute > 0) 
-				? sprintf($date_tmp2, $minute, Inflector::plural('min', $minute), $hour, Inflector::plural('hour', $hour))
-				: sprintf($date_tmp1, $hour, Inflector::plural('hour', $hour));
-
-		if ($minute > 0)
-			return ($second > 0) 
-				? sprintf($date_tmp2, $second, Inflector::plural('sec', $second), $minute, Inflector::plural('min', $minute))
-				: sprintf($date_tmp1, $minute, Inflector::plural('min', $minute));
-
-		return sprintf($date_tmp1, $second, Inflector::plural('sec', $second));
+		$created_time_obj = new DateTimeQamini($this->created_at);
+		
+		echo $created_time_obj->get_relative_diff(time());
 	}
 
 	/**
-	 * Increase view count of the current post
+	 * Handles post  requests (Add / Edit) for Model_Post objects
 	 *
-	 * @return true on successful save
+	 * @param  array posted data
 	 */
-	public function increase_view_count()
+	public function handle_submitted_post_data(&$post)
 	{
-		$this->view_count++;
-		$this->latest_activity = time();
-
-		return $this->save();
+		if (Auth::instance()->get_user() !== FALSE)	$this->handle_submitted_data_for_user($post);
+		else	$this->handle_submitted_data_for_guest($post);
 	}
-
+	
 	/**
-	 * Handles post  requests (Add / Edit) for Model_Post object.
+	 * Handles post  requests for logged in users
 	 *
-	 * @param  array posted array
+	 * @param  array posted data
 	 */
-	public function handle_post_request(&$post)
+	private function handle_submitted_data_for_user(&$post)
 	{
-		if (($user = Auth::instance()->get_user()) !== FALSE)
-		{
-			// If user is logged in, 1 => user wants to be notified about this post, 0 => no email
-			$post['notify_user'] = (isset($post['notify_user']) && $post['notify_user'] === 'on') ? '1' : '0';
+		$user = Auth::instance()->get_user();
+		
+		// If user is logged in, 1 => user wants to be notified about this post, 0 => no email
+		$post['notify_user'] = (isset($post['notify_user']) && $post['notify_user'] === 'on') ? '1' : '0';
 
-			// Add user id to the post array
-			$post += array('user_id' => $user->id);
-		}
-		else
-		{
-			$this->notify_email = isset($post['user_notification_email'])
-				? $post['user_notification_email']
-				: '';
-
-			$post['notify_user'] = (isset($post['notify_user']) && $post['notify_user'] === 'on')
-				? $this->notify_email
-				: '0';
-		}
+		// Add user id to the post array
+		$post += array('user_id' => $user->id);
 	}
+	
+	/**
+	 * Handles post  requests for guests
+	 *
+	 * @param  array posted data
+	 */
+	private function handle_submitted_data_for_guest(&$post)
+	{
+		// TODO: !
+		$this->notify_email = isset($post['user_notification_email'])
+			? $post['user_notification_email']
+			: '';
 
-	/***** PRIVATE METHODS *****/
+		$post['notify_user'] = (isset($post['notify_user']) && $post['notify_user'] === 'on')
+			? $this->notify_email
+			: '0';
+	}
 
 	/**
 	 * Used to fill a new post object's fields. Calls save_post to insert the post to the DB.
 	 *
 	 * @param  array posted data
-	 * @param  string post type
 	 * @uses   Model_Post::save_post()
-	 * @uses   Model_Post::update_parent_stats()
 	 * @uses   Model_Post::handle_reputation()
 	 * @uses   Model_Post::send_post_update_notification()
 	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
-	private function create_post($post, $post_type)
+	protected function create_post($post)
 	{
-		// Add user id if a registered user created the post
-		if (isset($post['user_id']) && $post['user_id'] > 0)
-		{
-			$this->user_id = $post['user_id'];
-		}
-		$this->post_type = $post_type;
+		$this->add_user_id_to_post($post);
+		
 		$this->updated_at = time();
 
-		// Add created by string if it is a visitor
-		if (isset($post['created_by']) && $post['created_by'] != '')
-		{
-			$this->created_by = $post['created_by'];
-		}
+		$this->add_created_by_if_visitor($post);
 			
 		$this->save_post($post);
-
-		/*
-		 * Update parent questions answer / comment count if post_type is not question
-		 * If Logged In, Update current user's reputation points and latest activity time
-		 */
-		try {
-			switch ($this->post_type)
-			{
-				case Helper_PostType::ANSWER:
-						$reputation_type = Helper_ReputationType::ANSWER_ADD;
-						$this->update_parent_stats();
-					break;
-				case Helper_PostType::COMMENT:
-						$reputation_type = Helper_ReputationType::COMMENT_ADD;
-						$this->update_parent_stats();
-					break;
-				default:
-					$reputation_type = Helper_ReputationType::QUESTION_ADD;
-					break;
-			}
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, $ex->getMessage());
-		}
-
-		if (isset($post['user_id']) && $post['user_id'] > 0)
-		{
-			$this->handle_reputation($reputation_type);
-		}
 		
-		// Send email notification if parent post owner wants to be notified
-		if ($this->parent_post_id !== NULL && $this->parent_post_id > 0)
-		{
+		if ($this->check_post_has_parent())	
 			$this->send_post_update_notification();
-		}
+	}
+	
+	/**
+	 * Adds user id if post is submitted by a user
+	 */
+	private function add_user_id_to_post($post)
+	{
+		if (Arr::get($post, 'user_id', 0) > 0)
+			$this->user_id = $post['user_id'];
+	}
+	
+	/**
+	 * Adds created by string if post is submitted by a visitor
+	 */
+	private function add_created_by_if_visitor($post)
+	{
+		if (Arr::get($post, 'created_by', '') != '')
+			$this->created_by = $post['created_by'];
+	}
+	
+	/**
+	 * Checks if the current post has a parent or not
+	 */
+	private function check_post_has_parent()
+	{
+		return $this->parent_post_id !== NULL && $this->parent_post_id > 0;
 	}
 
 	/**
@@ -862,17 +361,15 @@ class Model_Post extends ORM {
 	 * @param  array posted data
 	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
-	private function save_post($post)
+	protected function save_post($post)
 	{
 		$this->title = (isset($post['title'])) ? trim($post['title']) : NULL;
 		$this->slug = (isset($post['title'])) ? URL::title($this->title) : NULL;
 		$this->content = $post['content'];
 		$this->latest_activity = time();
 
-		if (isset($post['notify_user']) && $post['notify_user'] !== '')
-		{
+		if (Arr::get($post, 'notify_user', '') !== '')
 			$this->notify_email = $post['notify_user'];
-		}
 
 		if (!$this->save())
 		{
@@ -882,22 +379,24 @@ class Model_Post extends ORM {
 				throw new Kohana_Exception('Model_Post::save_post(): Could not save the post');
 		}
 	}
-
-	/**
-	 * Creates a new Model_Post object from an associative array
+	
+ 	/**
+	 * Marks a post as anonymous.
+	 * Used when a user decided to delete a question or an answer
 	 *
-	 * @param  array data
-	 * @return object Instance of Model_Post
+	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
-	private function create_object($data)
+	protected function mark_post_anonymous()
 	{
-		$new_object = new Model_Post;
-		foreach ($data as $key => $value)
-		{
-			$new_object->$key = $value;
-		}
+		$this->latest_activity = time();
+		$this->post_moderation = Helper_PostModeration::MARKED_ANONYMOUS;
+		$this->user_id = 0;
+		$this->created_by = 'anonymous';
+		$this->notify_email = '0';
 
-		return $new_object;
+		if (!$this->save())
+			throw new Kohana_Exception('Model_Post::mark_post_anonymous(): Could not delete '
+				. $this->post_type . ' with ID: ' . $this->id);
 	}
 
 	/**
@@ -909,7 +408,7 @@ class Model_Post extends ORM {
 	 * @uses   Model_Reputation::delete_reputation()
 	 * @uses   Model_User::update_reputation()
 	 */
-	private function handle_reputation($reputation_type, $subtract = FALSE)
+	protected function handle_reputation($reputation_type, $subtract = FALSE)
 	{
 		if (($user = Auth::instance()->get_user()) === FALSE)
 		{
@@ -919,10 +418,10 @@ class Model_Post extends ORM {
 
 		switch ($reputation_type)
 		{
-			case Helper_ReputationType::QUESTION_ADD:
+			case Model_Reputation::QUESTION_ADD:
 					$user->question_count += ($subtract) ? -1 : 1;
 				break;
-			case Helper_ReputationType::ANSWER_ADD:
+			case Model_Reputation::ANSWER_ADD:
 					$user->answer_count += ($subtract) ? -1 : 1;
 				break;
 		}
@@ -930,24 +429,19 @@ class Model_Post extends ORM {
 		// Insert a new reputation entry
 		try {
 			if ($subtract)
-			{
 				ORM::factory('reputation')->delete_reputation($user->id, $this->id, $reputation_type);
-			}
 			else
-			{
-				$reputation = new Model_Reputation;
-				$reputation->create_reputation($user->id, $this->id, $reputation_type);
-			}
+				$reputation = Model_Reputation::create_reputation($user->id, $this->id, $reputation_type);
 
 			// Update user reputation point
 			// By default current user's point is changed, but in some voting actions, owner user's reputation is also changed
 			switch ($reputation_type)
 			{
-				case Helper_ReputationType::OWN_ACCEPTED_ANSWER:
-				case Helper_ReputationType::OWN_ANSWER_VOTED_DOWN:
-				case Helper_ReputationType::OWN_ANSWER_VOTED_UP:
-				case Helper_ReputationType::OWN_QUESTION_VOTED_DOWN:
-				case Helper_ReputationType::OWN_QUESTION_VOTED_UP:
+				case Model_Reputation::OWN_ACCEPTED_ANSWER:
+				case Model_Reputation::OWN_ANSWER_VOTED_DOWN:
+				case Model_Reputation::OWN_ANSWER_VOTED_UP:
+				case Model_Reputation::OWN_QUESTION_VOTED_DOWN:
+				case Model_Reputation::OWN_QUESTION_VOTED_UP:
 
 					if ($this->user_id < 1)
 						break;
@@ -970,253 +464,52 @@ class Model_Post extends ORM {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): ' . $ex->getMessage());
 		}
 	}
-
-	/**
-	 * Marks a post as anonymous.
-	 * Used when a user decided to delete a question or an answer
-	 *
-	 * @throws Kohana_Exception, ORM_Validation_Exception
-	 */
-	private function mark_post_anonymous()
-	{
-		$this->latest_activity = time();
-		$this->post_moderation = Helper_PostModeration::MARKED_ANONYMOUS;
-		$this->user_id = 0;
-		$this->created_by = 'anonymous';
-		$this->notify_email = '0';
-
-		if (!$this->save())
-			throw new Kohana_Exception('Model_Post::mark_post_anonymous(): Could not delete '
-				. $this->post_type . ' with ID: ' . $this->id);
-	}
-
-	/**
-	 * Adds tags for the question.
-	 * Searches tag's slug in case that tag is already added. If so increase its used count.
-	 * Otherwise, add the tags to the DB. Lastly adds the tag to this question.
-	 *
-	 * @param  string posted tags
-	 * @uses   Model_Post::get_tag_by_slug()
-	 */
-	private function add_tags($tags)
-	{
-		if ($tags === '')
-			return;
-
-		$tag_array = explode(',', $tags);
-
-		// Loop every entered tag
-		foreach ($tag_array as $tag)
-		{
-			if (($tag = trim($tag)) === '')
-				continue;
-
-			$banned_tag = FALSE;
-
-			$tag_slug = URL::title($tag);
-			
-			// Check if this post has already this tag
-			if ($this->has('tags', ORM::factory('tag', array('slug' => $tag_slug))))
-				continue;
-			
-			$tag_obj = ORM::factory('tag')->get_tag_by_slug($tag_slug);
-
-			// This is a new tag. Add it to the DB
-			if ($tag_obj->id === NULL)
-			{
-				$tag_obj->value = $tag;
-				$tag_obj->slug = $tag_slug;
-				$tag_obj->created_by = ($this->user_id > 0) ? $this->user_id : $this->created_by;
-				$tag_obj->updated_at = time();
-			}
-			else
-			{
-				if ($tag_obj->tag_status == Helper_TagStatus::NORMAL)
-				{
-					$tag_obj->post_count++;
-				}
-				elseif ($tag_obj->tag_status == Helper_TagStatus::DELETED)
-				{
-					$tag_obj->post_count++;
-					$tag_obj->tag_status = Helper_TagStatus::NORMAL;
-				}
-				else
-				{
-					$banned_tag = TRUE;
-				}
-			}
-
-			if ($banned_tag)
-				continue;
-
-			if (!$tag_obj->save())
-			{
-				Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::add_tags(): ' .
-					sprintf('Error while saving tag with name: %s, slug: %s
-                          						, id: %d', $tag, $tag_slug, $tag_obj->id));
-				continue;
-			}
-
-			$this->add('tags', $tag_obj);
-		}
-	}
-
-	/**
-	 * Updates tags for the question.
-	 * Searches tag's slug in case that tag is already added. If so increase its used count.
-	 * Otherwise, add the tags to the DB. Lastly adds the tag to this question.
-	 *
-	 * @param string posted tags
-	 * @uses  Model_Post::generate_tag_list()
-	 * @uses  Model_Post::get_tag_by_slug()
-	 * @uses  Model_Post::add_tags()
-	 */
-	private function update_tags($tags)
-	{
-		$tag_array = explode(',', $tags);
-		$old_tags = $this->generate_tag_list();
-
-		if ($old_tags === $tags)
-			return;
-
-		$old_tags_array = ($old_tags === '') ? array() : explode(',', $old_tags);
-
-		// Loop every entered tag
-		foreach ($old_tags_array as $tag)
-		{
-			// If an old tag is entered again (maybe multiple times), just remove it from new tags string
-			$tag_found = FALSE;
-			$search_old_tags = TRUE;
-			while ($search_old_tags)
-			{
-				$ind = array_search($tag, $tag_array);
-				if ($ind === FALSE || $ind < 0)
-				{
-					$search_old_tags = FALSE;
-				}
-				else
-				{
-					$tag_found = TRUE;
-					unset($tag_array[$ind]);
-				}
-			}
-
-			if ($tag_found)
-				continue;
-
-			// An old tag is removed when the question is edited. So delete the tag from the question.
-
-			$tag_obj = ORM::factory('tag')->get_tag_by_slug(URL::title($tag));
-			$tag_obj->post_count--;
-
-			if ($tag_obj->post_count === 0)
-			{
-				$tag_obj->tag_status = Helper_TagStatus::DELETED;
-			}
-
-			if (!$tag_obj->save())
-			{
-				Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::add_tags(): ' .
-					sprintf('Error while saving tag with name: %s, id: %d', $tag, $tag_obj->id));
-				continue;
-			}
-
-			$this->remove('tags', $tag_obj);
-		}
-			
-		$tag_array_will_be_added = '';
-
-		// Loop tags that will be added. (Not found in previous revision of the question)
-		foreach ($tag_array as $tag)
-		{
-			$tag_array_will_be_added .= $tag . ',';
-		}
-
-		if ($tag_array_will_be_added === '')
-			return;
-			
-		try {
-			$this->add_tags(substr($tag_array_will_be_added, 0, -1));
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::add_tags(): ' . $ex->getMessage());
-		}
-	}
-
-	/**
+	
+ 	/**
 	 * Checks if the same user has already voted for this post.
 	 * If the prev vote is the opposite of the current one, deletes it and update user's reputation
 	 * If the same vote is used before, do nothing, inform user.
 	 *
 	 * @param  int type of the vote. (up or down)
+	 * @param  int reputation type for up vote
+	 * @param  int reputation type for down vote
 	 * @uses   Model_Post::handle_reputation()
 	 * @throws Kohana_Exception
 	 * @return int 1 => not voted before, -1 => opposite vote is used before, -2 => the same vote is used before
 	 */
-	private function check_user_previous_votes($vote_type)
+	protected function check_user_previous_votes($vote_type, $reputation_type_up, $reputation_type_down)
 	{
 		if (($user = Auth::instance()->get_user()) === FALSE)
 			throw new Kohana_Exception('Model_Post::check_user_previous_votes(): Could not get current user');
 
-		if ($this->post_type === Helper_PostType::QUESTION)
-		{
-			$previous_vote_up = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
-				$this->id, Helper_ReputationType::QUESTION_VOTE_UP);
+		$previous_vote_up = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
+			$this->id, $reputation_type_up);
 
-			$previous_vote_down = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
-				$this->id, Helper_ReputationType::QUESTION_VOTE_DOWN);
-		}
-		elseif ($this->post_type === Helper_PostType::ANSWER)
-		{
-			$previous_vote_up = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
-				$this->id, Helper_ReputationType::ANSWER_VOTE_UP);
-
-			$previous_vote_down = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
-				$this->id, Helper_ReputationType::ANSWER_VOTE_DOWN);
-		}
+		$previous_vote_down = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
+			$this->id, $reputation_type_down);
 
 		// User has not voted this post before. (up or down)
-		if (!$previous_vote_up->loaded() && !$previous_vote_down->loaded())
+		if (!Model_Reputation::any_object_loaded(array($previous_vote_up, $previous_vote_down)))
 			return 1;
 
-		// The same vote has already been used
-		if (($vote_type === 0 && $previous_vote_down->loaded()) ||
-			($vote_type === 1 && $previous_vote_up->loaded()))
+		if ($this->same_post_already_voted($vote_type, $previous_vote_up, $previous_vote_down))
 			return -2;
 
 		// User has voted this post before but different type.
-		// The opposite vote is given by the same user, delete it, update users reputation
+		// The opposite vote is given by the same user, delete it, update user's reputation
 		if ($vote_type === 0)
 		{
-			// update voter's reputation
-			$this->handle_reputation($previous_vote_up->reputation_type, TRUE);
+			$this->handle_reputation($reputation_type_up, TRUE);
 
-			// update owner user's reputation
-			if ($previous_vote_up->reputation_type === Helper_ReputationType::QUESTION_VOTE_UP)
-			{
-				$this->handle_reputation(Helper_ReputationType::OWN_QUESTION_VOTED_UP, TRUE);
-			}
-			else
-			{
-				$this->handle_reputation(Helper_ReputationType::OWN_ANSWER_VOTED_UP, TRUE);
-			}
-				
+			$this->handle_reputation(Model_Reputation::get_owner_type($reputation_type_up), TRUE);
+
 			$this->up_votes--;
 		}
 		else
 		{
-			// update voter's reputation
-			$this->handle_reputation($previous_vote_down->reputation_type, TRUE);
+			$this->handle_reputation($reputation_type_down, TRUE);
 
-			// update owner user's reputation
-			if ($previous_vote_down->reputation_type === Helper_ReputationType::QUESTION_VOTE_DOWN)
-			{
-				$this->handle_reputation(Helper_ReputationType::OWN_QUESTION_VOTED_DOWN, TRUE);
-			}
-			else
-			{
-				$this->handle_reputation(Helper_ReputationType::OWN_ANSWER_VOTED_DOWN, TRUE);
-			}
+			$this->handle_reputation(Model_Reputation::get_owner_type($reputation_type_down), TRUE);
 				
 			$this->down_votes--;
 		}
@@ -1225,53 +518,48 @@ class Model_Post extends ORM {
 			$this->save();
 		}
 		catch (Exception $ex) {
-			throw new Kohana_Exception('Model_Post::check_user_previous_votes(): ' . $ex->getMessage());
+			throw new Kohana_Exception('Model_Answer::check_user_previous_votes(): ' . $ex->getMessage());
 		}
-
+		
 		return -1;
 	}
-
+	
 	/**
-	 * Checks if a question has accepted answer or not
-	 *
-	 * @return bool true if found
+	 * Checks if the same vote has already been voted by the same user
+	 * 
+	 * @param  int vote_type
+	 * @param  Model_Reputation object
+	 * @param  Model_Reputation object
+	 * @return boolean
 	 */
-	private function check_accepted_posts()
+	private function same_post_already_voted($vote_type, $previous_vote_up, $previous_vote_down)
 	{
-		$count = $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('parent_post_id','=' , $this->parent_post_id)
-			->and_where('post_status','=' , Helper_PostStatus::ACCEPTED)
-			->count_all();
-
-		return ($count > 0);
+		return ($vote_type === 0 && $previous_vote_down->loaded()) 
+			|| ($vote_type === 1 && $previous_vote_up->loaded());
 	}
 
 	/**
 	 * Increases or decreases parent post's relevant (answer or comment count) field
 	 *
+	 * @param  string count column name of Model_Post object
 	 * @param  bool default increases parent question's relevant field
 	 * @throws ORM_Validation_Exception
 	 */
-	private function update_parent_stats($increase = TRUE)
+	protected function update_parent_stats($count_column, $increase = TRUE)
 	{
-		if (($parent_post = ORM::factory('post')->get($this->parent_post_id, Helper_PostType::ALL)) === NULL)
+		if (($parent_post = Model_Post::get($this->parent_post_id)) === NULL)
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::update_parent_stats(): Could not get parent post. ID: ' . $this->id . ', parent ID: ' . $this->parent_post_id);
 			return;
 		}
-			
-		$val = ($increase) ? 1 : -1;
 
-		if ($this->post_type === Helper_PostType::ANSWER)
-			$parent_post->answer_count += $val;
-		elseif ($this->post_type === Helper_PostType::COMMENT)
-			$parent_post->comment_count += $val;
-		else
-			return;
+		$parent_post->$count_column += ($increase) ? 1 : -1;
 
 		if (!$parent_post->save())
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::update_parent_stats(): Could not save parent post. ID: ' . $parent_post->id);
 	}
+
+	/***** PRIVATE METHODS *****/
 	
 	/**
 	 * Sends notification email if the parent post owner wants 
@@ -1279,7 +567,7 @@ class Model_Post extends ORM {
 	 */
 	private function send_post_update_notification()
 	{
-		if (($parent_post = ORM::factory('post')->get($this->parent_post_id, Helper_PostType::ALL)) === NULL)
+		if (($parent_post = Model_Post::get($this->parent_post_id)) === NULL)
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR
 			, 'Model_Post::send_post_update_notification(): Could not get parent post. ID: ' 
@@ -1288,38 +576,17 @@ class Model_Post extends ORM {
 			return;
 		}
 
-		if ($parent_post->notify_email === NULL || $parent_post->notify_email === '0')
-			return;
+		if (!$parent_post->wants_notification_mails())	return;
 
 		// If parent post and this post have same owner, don't send any email
-		if ($parent_post->user_id === $this->user_id)
-			return;
-
-		if ($parent_post->notify_email === '1')
-		{
-			// Try to get owner user
-			if (!($owner_user = ORM::factory('user')->get_user_by_id($parent_post->user_id)))
-			{
-				Kohana_Log::instance()->add(Kohana_Log::ERROR
-				, 'Model_Post::send_post_update_notification(): Could not get parent post user. ID: ' 
-				. $parent_post->id . ', user ID: ' . $parent_post->user_id);
-				
-				return;
-			}
-			
-			$email_address = $owner_user->email;
-			$created_by = $owner_user->username;
-		}
-		else
-		{
-			$email_address = $parent_post->notify_email;
-			$created_by = ($parent_post->created_by === NULL) ? '' : $parent_post->created_by;
-		}
+		if ($parent_post->user_id === $this->user_id)	return;
+		
+		$email_fields = $parent_post->get_email_fields();
 
 		// If the parent post is an answer, we need to get its parent question for id and slug
 		if ($parent_post->parent_post_id !== NULL)
 		{
-			if (($post = ORM::factory('post')->get($parent_post->parent_post_id, Helper_PostType::QUESTION)) === NULL)
+			if (($post = Model_Question::get($parent_post->parent_post_id)) === NULL)
 			{
 				Kohana_Log::instance()->add(Kohana_Log::ERROR
 				, 'Model_Post::send_post_update_notification(): Could not get parent post. ID: '
@@ -1336,9 +603,105 @@ class Model_Post extends ORM {
 		$link = URL::site(Route::get('question')->uri(
 		array('action'=>'detail', 'id' => $post->id, 'slug' => $post->slug)), 'http');
 		
-		Helper_Mailer::instance()->send_mail($email_address, $created_by, Kohana::config('config.website_name') 
-		, Kohana::config('config.website_name'), 'post_update_notification_email'
-		, array('url' => $link, 'created_by' => $created_by));
-
+		$mailer = new QaminiMailer($email_fields['email_address'], $email_fields['created_by']
+		, Kohana::config('config.website_name'), Kohana::config('config.website_name')
+		, 'post_update_notification_email', array('url' => $link, 'created_by' => $email_fields['created_by']));
+		
+		$mailer->send();
+	}
+	
+	/**
+	 * Checks if a post owner wants to be notified or not
+	 * 
+	 * @return boolean
+	 */
+	private function wants_notification_mails()
+	{
+		return ($this->notify_email !== NULL && $this->notify_email !== '0');
+	}
+	
+	/**
+	 * Returns email information to send a notification email
+	 * 
+	 * @return mixed
+	 */	
+	private function get_email_fields()
+	{
+		if ($this->post_send_by_registered_user())	return $this->set_email_fields_from_user();
+		
+		return $this->set_email_fields_from_guest();
+	}
+	
+	/**
+	 * checks if post owner a registered user or not
+	 * 
+	 * @return boolean
+	 */
+	private function post_send_by_registered_user()
+	{
+		return $this->notify_email === '1';
+	}
+	
+	/**
+	 * Sets address and name of the email from user info
+	 * 
+	 * @return mixed
+	 */
+	private function set_email_fields_from_user()
+	{			
+		if (($owner_info = $this->get_parent_post_owner()) === NULL)	return NULL;
+		
+		return array('email_address' => $owner_info->email, 'created_by' => $owner_info->username);
+	}
+	
+	/**
+	 * Sets address and name of the email from guest info
+	 * 
+	 * @return mixed
+	 */
+	private function set_email_fields_from_guest()
+	{
+		$created_by = ($this->created_by === NULL) ? '' : $this->created_by;
+		
+		return array('email_address' => $this->notify_email, 'created_by' => $created_by);
+	}
+	
+	/**
+	 * Returns a post's owner, if not found, logs and returns null
+	 * 
+	 * @return mixed
+	 */
+	private function get_parent_post_owner()
+	{
+		if (!($owner_user = ORM::factory('user')->get_user_by_id($this->user_id)))
+		{
+			Kohana_Log::instance()->add(Kohana_Log::ERROR
+			, 'Model_Post::get_parent_post_owner(): Could not get parent post user. ID: ' 
+			. $this->id . ', user ID: ' . $this->user_id);
+			
+			return NULL;
+		}
+		
+		return $owner_user;
+	}
+	
+ 	/**
+	 * Checks if the post is deleted
+	 * 
+	 * @return boolean
+	 */
+	protected function is_deleted()
+	{
+		return $this->post_moderation === Helper_PostModeration::DELETED;
+	}
+	
+ 	/**
+	 * Returns all tags of the posts
+	 * 
+	 * @return array
+	 */
+	public function get_tags()
+	{
+		return ORM::factory('post', $this->id)->tags->find_all();
 	}
 }

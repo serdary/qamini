@@ -45,7 +45,7 @@
 <!-- Add tags if question has any -->
 <?php 
 $tags_html = '';
-foreach ($post->tags->find_all() as $tag)
+foreach ($post->get_tags() as $tag)
 {
 	$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value));
 }
@@ -97,7 +97,8 @@ if ($user_id === $post->user_id)
 <div class="comments-holder comment-group-<?php echo $post->id; ?>">
 
 <?php
-foreach ($post->comments as $com)
+
+foreach ($post->get_comments() as $com)
 {
 	echo '<div class="comment single-comment-', $com->id, '">', $com->get_post_content();
 
@@ -134,7 +135,6 @@ if ($user_logged_in)
 		  View::factory($theme_dir . 'comment/add')
 	                  ->set('theme_dir', $theme_dir)
 	                  ->set('parent_id', $post->id)
-	                  ->set('post', $comment)
 	                  ->set('token', $token)
 	                  ->set('form_action', URL::site(Route::get('comment')->uri(array('action' => 'add'))))
 	                  ->render(), 
@@ -156,7 +156,7 @@ if ($user_logged_in)
 		?>
 	</h2>
 
-   <?php foreach ($post->answers as $ind => $answer) { ?>
+   <?php foreach ($post->get_answers() as $ind => $answer) { ?>
 	<div class="answer">
 	
 	<div class="vote-info">
@@ -255,7 +255,7 @@ if ($user_logged_in)
 				
 		<div class="answer-comments-holder comment-group-<?php echo $answer->id; ?>">
 		<?php 		
-		foreach ($answer->comments as $com)
+		foreach ($answer->get_comments() as $com)
 		{
 			echo '<div class="comment single-comment-', $com->id, '">', $com->get_post_content();
 			
@@ -294,7 +294,6 @@ if ($user_logged_in)
 				  View::factory($theme_dir . 'comment/add')
 			                  ->set('theme_dir', $theme_dir)
 			                  ->set('parent_id', $answer->id)
-			                  ->set('post', $comment)
 			                  ->set('token', $token)
 			                  ->set('form_action', URL::site(Route::get('comment')
 			                                       ->uri(array('action' => 'add'))))
@@ -314,15 +313,14 @@ echo View::factory($theme_dir.'answer/add')
 		             ->set('theme_dir', $theme_dir)
 		             ->set('user_logged_in', $user_logged_in)
 		             ->set('token', $token)
-		             ->bind('notify_email', $handled_post['notify_email'])
 		             ->bind('notify_user', $handled_post['notify_user'])
 		             ->bind('errors', $handled_post['errors'])
 		             ->set('answer', $current_answer)
-		             ->set('form_type', Helper_PostType::ANSWER)
+		             ->set('form_type', Model_Post::ANSWER)
 		             ->set('form_action', URL::site(Route::get('question')->uri(
 		                   array('action' => 'detail', 'id' => $post->id, 'slug' => $post->slug))))
-		             ->set('form_title', 'Add Answer')
-		             ->set('button_value', 'Add')
+		             ->set('form_title', __('Add Answer'))
+		             ->set('button_value', __('Add'))
 		             ->render();
 ?> 
 </div>

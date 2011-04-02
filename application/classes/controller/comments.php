@@ -21,105 +21,76 @@ class Controller_Comments extends Controller_Basic_Ajax {
 	/**
 	 * Add Comment Action. Only registered users can post a comment.
 	 *
-	 * @uses Model_Post::add_comment()
+	 * @uses Model_Comment::add()
 	 */
 	public function action_add()
 	{
-		if (!empty($this->errors))
-			return;
+		if ($this->has_errors())	return;
 
 		$post = $this->check_post_form();
 
-		// If any error occured while checking post values, then encode errors, and stop action
-		if (!empty($this->errors))
-			return;
+		if ($this->has_errors())	return;
 
 		$parent_id = (int) $post['hdn_parent_id'];
-			
-		// Try to save the comment
-		try {
-			$new_comment_id = ORM::factory('post')->add_comment($post, $parent_id);
-		}
-		catch (ORM_Validation_Exception $ex)
-		{
-			//$this->prepare_error_response($ex->errors('models'));
-			$this->prepare_error_response('Content must be at least 20 characters long.');
-			return;
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Add Comment | Message: ' . $ex->getMessage());
-				
-			$this->prepare_error_response(__('Error occured, please try again.'));
-			return;
-		}
 
-		$comment_delete_link = HTML::anchor(Route::get('comment')->uri(array('action' => 'delete'
-				, 'id' => $new_comment_id, 'parent_id' => $parent_id)), 'Delete'
-				, array('onclick' => 'return Detail.DeleteComment(' . $parent_id .  ',' . $new_comment_id . ')'
-				, 'class' => 'comment-delete-' . $new_comment_id));
-
-		$this->response->body(json_encode(
-			array('result' => TRUE, 'message' => __('Comment successfully added'),
-				'comment_link' => $comment_delete_link, 'id' => $new_comment_id)));
+		$comment = new Model_Comment;
+		
+		if (!$this->process_add_comment($comment, $post))	return;
+		
+		$this->prepare_add_success_response($comment);
 	}
 
 	/**
 	 * Delete Comment Action. Only registered users can delete a comment.
 	 *
-	 * @uses Model_User::get_post_by_id()
-	 * @uses Model_Post::delete_comment()
+	 * @uses Model_Comment::delete()
 	 */
 	public function action_delete()
 	{
-		if (!empty($this->errors))
-			return;
-			
-		// Add error if post is null or values are not correct
-		if ((!$post = $_POST) || !isset($_POST['parent_id']) || !isset($_POST['comment_id'])
-			|| !is_numeric($_POST['parent_id']) || !is_numeric($_POST['comment_id']))
+		if ($this->has_errors())	return;
+		
+		if ($this->invalid_data_for_delete_action() === TRUE)
 		{
 			$this->prepare_error_response(__('Invalid Request'));
-		}
-		else
-		{
-			$parent_id = (int) $post['parent_id'];
-			$comment_id = (int) $post['comment_id'];
-		}
-
-		// If any error occured while checking post values, then encode errors, and stop action
-		if (!empty($this->errors))
-			return;
-
-		// Try to get and delete user comment
-		try {
-			$comment = $this->user->get_post_by_id($comment_id, Helper_PostType::COMMENT);
-			$comment->delete_comment();
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Delete Comment | Message: ' . $ex->getMessage());
-				
-			$this->prepare_error_response('Error occured, please try again.');
 			return;
 		}
+			
+		$post = $_POST;
+		$parent_id = (int) $post['parent_id'];
+		$comment_id = (int) $post['comment_id'];
+		
+		if (!$this->process_delete_comment($comment_id, $post))	return;
 
 		$this->response->body(json_encode(
 			array('result' => 'OK', 'message' => __('Comment successfully deleted'))));
 	}
 
 	/***** PRIVATE METHODS *****/
+	
+	/**
+	 * Checks if current request has errors
+	 * 
+	 * @return boolean
+	 */
+	private function has_errors()
+	{
+		return !empty($this->errors);
+	}
 
 	/**
 	 * Checks posted comment, add errors if any found
+	 * 
+	 * @return array
 	 */
 	private function check_post_form()
 	{
-		// If posted data is invalid, add error.
-		if ((!$post = $_POST) || !isset($_POST['hdn_parent_id']) || !is_numeric($_POST['hdn_parent_id']))
+		if (!$_POST || !isset($_POST['hdn_parent_id']) || !is_numeric($_POST['hdn_parent_id']))
 		{
 			$this->prepare_error_response(__('Invalid Request'));
 			return NULL;
 		}
 
+		$post = $_POST;
 		$parent_id = (int) $post['hdn_parent_id'];
 
 		// change content key for the content value
@@ -135,5 +106,94 @@ class Controller_Comments extends Controller_Basic_Ajax {
 		}
 
 		return $post;
+	}
+	
+	/**
+	 * Do process for adding comment. Updates it on the DB.
+	 * 
+	 * @param  object reference of Model_Comment
+	 * @param  array data
+	 * @return boolean
+	 */
+	private function process_add_comment(&$comment, $post)
+	{
+		$parent_id = (int) $post['hdn_parent_id'];
+		
+		try {
+			$add_result = $comment->insert($post, $parent_id);
+		}
+		catch (ORM_Validation_Exception $ex)
+		{
+			//$this->prepare_error_response($ex->errors('models'));
+			$this->prepare_error_response('Content must be at least 20 characters long.');
+			return FALSE;
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Add Comment | Message: ' . $ex->getMessage());
+				
+			$this->prepare_error_response(__('Error occured, please try again.'));
+			return FALSE;
+		}
+		
+		return $add_result;
+	}
+	
+	/**
+	 * Prepares response body
+	 * 
+	 * @param object Model_Comment instance
+	 */
+	private function prepare_add_success_response($comment)
+	{
+		$this->response->body(json_encode(
+			array('result' => TRUE, 'message' => __('Comment successfully added'),
+				'comment_link' => $this->create_comment_delete_link($comment), 'id' => $comment->id)));
+	}
+	
+	/**
+	 * Creates a comment delete link for the newly added comment
+	 * 
+	 * @param object Model_Comment instance
+	 * @return string
+	 */
+	private function create_comment_delete_link($comment)
+	{		
+		return HTML::anchor(Route::get('comment')->uri(array('action' => 'delete'
+				, 'id' => $comment->id, 'parent_id' => $comment->parent_post_id)), __('Delete')
+				, array('onclick' => 'return Detail.DeleteComment(' . $comment->parent_post_id . ',' . $comment->id . ')'
+				, 'class' => 'comment-delete-' . $comment->id));
+	}
+	
+	/**
+	 * Checks posted data for delete action
+	 * 
+	 * @return boolean
+	 */
+	private function invalid_data_for_delete_action()
+	{
+		return (!$_POST || !isset($_POST['parent_id']) || !isset($_POST['comment_id'])
+				|| !is_numeric($_POST['parent_id']) || !is_numeric($_POST['comment_id']));
+	}
+	
+	/**
+	 * Do process for deleting comment
+	 * 
+	 * @uses   Model_Comment::get_user_comment_by_id()
+	 * @param  int comment id
+	 * @return boolean
+	 */
+	private function process_delete_comment($comment_id)
+	{
+		try {
+			Model_Comment::get_user_comment_by_id($comment_id, $this->user)->delete();
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Exception::Delete Comment | Message: ' . $ex->getMessage());
+				
+			$this->prepare_error_response('Error occured, please try again.');
+			return FALSE;
+		}
+		
+		return TRUE;
 	}
 }

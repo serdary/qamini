@@ -49,25 +49,20 @@ abstract class Controller_Basic_Ajax extends Controller {
 			return;
 		}
 
-		// Start the session
 		Session::instance();
 			
-		// Load Auth instance
 		$this->auth = Auth::instance();
 
-		// Try to get currently signed in user.
 		if (($this->user = $this->auth->get_user()) === FALSE)
 		{
 			$this->user = new Model_User;
 		}
 
-		$this->check_login();
+		if (!$this->check_login())	return;
 
 		// Checks token to prevent csrf attacks
 		if (isset($_POST))
-		{
 			$this->check_csrf_token(Arr::get($_POST, 'token', ''));
-		}
 	}
 
 	/**
@@ -80,13 +75,18 @@ abstract class Controller_Basic_Ajax extends Controller {
 
 	/**
 	 * If visitor is not logged in, adds an error message to the response
+	 * 
+	 * @return boolean
 	 */
 	protected function check_login()
 	{
 		if (!$this->auth || !$this->auth->logged_in())
 		{
 			$this->prepare_error_response(__('Please login.'));
+			return FALSE;
 		}
+		
+		return TRUE;
 	}
 
 	/**

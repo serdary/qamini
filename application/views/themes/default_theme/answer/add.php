@@ -4,7 +4,7 @@
              ->set('notify_user', $notify_user)
              ->set('errors', $errors)
              ->set('post', $answer)
-             ->set('form_type', Helper_PostType::ANSWER)
+             ->set('form_type', Model_Post::ANSWER)
              ->set('form_action', $form_action)
              ->set('form_title', __('Add Answer'))
              ->set('button_value', __('Add Answer'))

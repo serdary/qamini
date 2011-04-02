@@ -44,32 +44,24 @@ abstract class Controller_Template_Main extends Controller_Template {
 	 */
 	public function before()
 	{
-		// Start the session
 		Session::instance();
 
-		// Set user token
-		$this->get_csrf_token();
+		$this->set_csrf_token();
 			
-		// Load Auth instance
 		$this->auth = Auth::instance();
 			
 		Model_Setting::instance()->load_settings();
 
 		$this->template = $this->get_theme_directory() . 'template/main';
 
-		// Call parent's before method
 		parent::before();
 
 		// Try to get currently signed in user.
 		if (($this->user = $this->auth->get_user()) === FALSE)
-		{
 			$this->user = new Model_User;
-		}
 
 		if($this->auto_render)
-		{
 			$this->set_template_values();
-		}
 	}
 
 	/**
@@ -83,14 +75,13 @@ abstract class Controller_Template_Main extends Controller_Template {
 			$this->add_js(array('jquery-1.5.min'), TRUE);
 		}
 
-		// Run parent's after method
 		parent::after();
 	}
 
 	/**
 	 * Checks if the user is the currently being browsed user
 	 *
-	 * @param string The username that will be checked
+	 * @param string username that will be checked
 	 */
 	protected function check_same_user_profile($username)
 	{
@@ -173,26 +164,36 @@ abstract class Controller_Template_Main extends Controller_Template {
 	 * Checks if the active user has been visited this question before.
 	 * If not, increase this post's view count
 	 *
-	 * @param Model_Post post instance
+	 * @param object instance of Model_Question
 	 */
-	protected function handle_view_count_of_post(Model_Post $post)
+	protected function handle_view_count_of_post(Model_Question $post)
 	{
 		$visited_posts = Session::instance()->get('visited_posts', array());
 
-		// If user is already visited this question in this session, do not increase view count
-		if (array_search($post->id, $visited_posts) !== FALSE)
-			return;
+		if ($this->user_is_already_visited($post->id, $visited_posts))		return;
 
 		if ($post->increase_view_count())
 			$visited_posts[] = $post->id;
 			
 		Session::instance()->set('visited_posts', $visited_posts);
 	}
+	
+	/**
+	 * Checks if a question id is already in visited array
+	 * 
+	 * @param  int int
+	 * @param  array visited questions
+	 * @return boolean
+	 */
+	private function user_is_already_visited($id, &$visited_posts)
+	{
+		return array_search($id, $visited_posts) !== FALSE;
+	}
 
 	/**
-	 * Saves a csrf token for the current visitor to prevent csrf attacks.
+	 * Saves a csrf token for the current visitor to prevent csrf attacks and returns the token.
 	 *
-	 * @return csrf token of the current user
+	 * @return string
 	 */
 	protected function set_csrf_token()
 	{
@@ -202,7 +203,7 @@ abstract class Controller_Template_Main extends Controller_Template {
 	/**
 	 * Returns user's csrf token, if token is not saved in session, saves a new one
 	 *
-	 * @return csrf token of the current user
+	 * @return string
 	 */
 	protected function get_csrf_token()
 	{
@@ -216,15 +217,13 @@ abstract class Controller_Template_Main extends Controller_Template {
 	 * Checks csrf token
 	 *
 	 * @param  string posted token
-	 * @param  Route route to redirect if token is not validated
+	 * @param  object route to redirect if token is not validated
 	 */
 	protected function check_csrf_token($token = '', $redirect_page = NULL)
 	{
-		if ($this->get_csrf_token() === $token)
-			return;
+		if ($this->get_csrf_token() === $token)	return;
 
-		if ($redirect_page === NULL)
-			$redirect_page = Route::get('question')->uri();
+		if ($redirect_page === NULL)	$redirect_page = Route::get('question')->uri();
 			
 		$this->request->redirect($redirect_page);
 	}
@@ -232,16 +231,46 @@ abstract class Controller_Template_Main extends Controller_Template {
 	/***** PRIVATE METHODS *****/
 
 	/**
-	 * Sets template default values such as title, meta tags etc.
+	 * Sets template default values such as title, meta tags, styles etc.
 	 */
-	private function set_template_values()
+	protected function set_template_values($metas = NULL)
 	{
-		$this->template->title            = Kohana::config('config.website_name') . __(' Question & Answer System');
-		$this->template->meta_keywords    = __('q2a, question&answer');
-		$this->template->meta_description = __('Question & answer website');
+		$this->set_template_metas();
 		$this->template->content          = '';
 		$this->template->styles           = array();
 		$this->template->scripts          = array();
 		$this->template->bind_global('user', $this->user);
+	}
+	
+	/**
+	 * Prepares webste meta object to fill main template
+	 * 
+	 * @param string title
+	 * @param string description
+	 */
+	protected function prepare_metas($title, $description)
+	{
+		$title_postfix = ' | ' . Kohana::config('config.website_name');
+		$char_limit = Kohana::config('config.max_meta_title_length') - strlen($title_postfix);
+		
+		$title = Text::limit_chars(HTML::chars($title), $char_limit) . $title_postfix;
+		$description = Text::limit_chars(HTML::chars($description), Kohana::config('config.max_meta_desc_length'));
+		
+		$this->set_template_metas(new WebsiteMeta($title, $description));
+	}
+
+	/**
+	 * Sets template metas
+	 * 
+	 * @param object instance of WebsiteMeta
+	 */
+	protected function set_template_metas($metas = NULL)
+	{
+		if ($metas === NULL)
+			$metas = WebsiteMeta::generate_default_metas();
+			
+		$this->template->title            = $metas->get_title();
+		$this->template->meta_keywords    = $metas->get_keywords();
+		$this->template->meta_description = $metas->get_description();
 	}
 }

@@ -5,6 +5,7 @@
  * @package   qamini
  * @since     0.1.0
  * @author    Serdar Yildirim
+ * @deprecated
  */
 class Helper_PostType {        
 	const QUESTION = 'question';

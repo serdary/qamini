@@ -66,11 +66,11 @@ class Model_User extends Model_Auth_User {
 	/**
 	 * Returns user by user id
 	 *
-	 * @param int user id
+	 * @param  int    user id
+	 * @return object
 	 */
 	public function get_user_by_id($id)
 	{
-		// Try to load the user
 		$user = $this->where('id', '=', $id)->find();
 
 		return ($user->loaded() === TRUE) ? $user : NULL;
@@ -87,9 +87,7 @@ class Model_User extends Model_Auth_User {
 	{
 		$data = Validation::factory($data);
 
-		// If the information is not valid, return false
-		if (!$data->check())
-			return FALSE;
+		if (!$data->check())	return FALSE;
 
 		// Try to load the user
 		$this->where('username', '=', $data['username'])->find();
@@ -100,25 +98,18 @@ class Model_User extends Model_Auth_User {
 
 		return FALSE;
 	}
-
+	
 	/**
 	 * Updates user's columns after login
 	 */
 	public function complete_login()
 	{
-		if (!$this->_loaded)
-			return;
+		if (!$this->_loaded)	return;
 
-		// Update the number of logins
 		$this->logins = new Database_Expression('logins + 1');
-
-		// Set the last login and latest activity time
 		$this->last_login = $this->latest_activity = time();
-
-		// Set the user ip as his/her last ip
 		$this->last_ip = Request::$client_ip;
 
-		// Save the user
 		$this->save();
 	}
 
@@ -135,23 +126,30 @@ class Model_User extends Model_Auth_User {
 	{
 		$this->values($data);
 
-		// Add the new user
 		$this->save();
 
-		// Give "login" role to the user
 		$this->add('roles', ORM::factory('role', array('name' => 'login')));
 
+		$this->send_signup_mail();
+
+		return TRUE;
+	}
+	
+	/**
+	 * Sends signed up mail to the user
+	 */
+	private function send_signup_mail()
+	{
 		$link = URL::site(Route::get('user_ops')->uri(array('action' => 'confirm_signup'))
 												. '?id=' . $this->id . '&auth_token='
-												. Auth::instance()->hash($this->email)
-											, 'http');
-			
-		Helper_Mailer::instance()->send_mail($this->email, $this->username
+												. Auth::instance()->hash($this->email), 'http');
+											
+		$mailer = new QaminiMailer($this->email, $this->username
 			, Kohana::config('config.website_name') . __(' - Signup') 
 			, Kohana::config('config.website_name') . __(' Website'), 'confirm_signup'
 			, array('url' => $link, 'username' => $this->username));
-
-		return TRUE;
+			
+		$mailer->send();
 	}
 
 	/**
@@ -159,24 +157,17 @@ class Model_User extends Model_Auth_User {
 	 *
 	 * @param   integer  user id
 	 * @param   string   confirmation token
-	 * @return  boolean  true on success
+	 * @return  boolean
 	 */
 	public function confirm_signup($id, $token)
 	{
-		if ($id < 0 || empty($token) || ($this->loaded() && $this->id != $id))
-			return FALSE;
+		if ($id < 0 || empty($token) || ($this->loaded() && $this->id != $id))	return FALSE;
 
-		// Load user by id
-		if (!$this->loaded())
-			$this->where('id', '=', $id)->find();
+		if (!$this->loaded())	$this->where('id', '=', $id)->find();
 
-		// Invalid user id
-		if (!$this->loaded())
-			return FALSE;
+		if (!$this->loaded())	return FALSE;
 
-		// Invalid confirmation token
-		if ($token !== Auth::instance()->hash($this->email))
-			return FALSE;
+		if (!$this->token_is_valid($token))	return FALSE;
 
 		// If user is not already confirmed, add user role
 		if (!$this->has('roles', ORM::factory('role', array('name' => 'user'))))
@@ -185,6 +176,16 @@ class Model_User extends Model_Auth_User {
 		}
 
 		return TRUE;
+	}
+	
+	/**
+	 * Checks if token is valid
+	 * 
+	 * @param boolean
+	 */
+	private function token_is_valid($token)
+	{
+		return $token === Auth::instance()->hash($this->email);
 	}
 
 	/**
@@ -203,27 +204,36 @@ class Model_User extends Model_Auth_User {
 			->rule('email', array($this, 'is_email_registered'));
 
 		if (!$email_rules->check())
-		{
-			$exception = new ORM_Validation_Exception('user', $email_rules);
-			throw $exception;
-		}
+			throw new ORM_Validation_Exception('user', $email_rules);
 
 		// Load user data
 		$this->where('email', '=', $data['email'])->find();
-
+		
+		$this->send_reset_password_mail();
+			
+		return TRUE;
+	}
+	
+	/**
+	 * Sends user a reseet password instructions mail
+	 */
+	private function send_reset_password_mail()
+	{
 		$time = time();
-		$link = URL::site(Route::get('user_ops')->uri(array('action' => 'confirm_forgot_password'))
+		
+		$uri = Route::get('user_ops')->uri(array('action' => 'confirm_forgot_password'))
 				. '?id=' . $this->id . '&auth_token='
 				. Auth::instance()->hash(sprintf('%s_%s_%d', $this->email, $this->password, $time))
-				. '&time=' . $time
-			, 'http');
+				. '&time=' . $time;
+				
+		$link = URL::site($uri, 'http');
 			
-		Helper_Mailer::instance()->send_mail($this->email, $this->username
+		$mailer = new QaminiMailer($this->email, $this->username
 			, Kohana::config('config.website_name') . __(' - Reset Password') 
 			, Kohana::config('config.website_name') . __(' Website'), 'confirm_reset_password'
 			, array('url' => $link, 'username' => $this->username));
 			
-		return TRUE;
+		$mailer->send();
 	}
 
 	/**
@@ -239,23 +249,27 @@ class Model_User extends Model_Auth_User {
 		if ($id === 0 || $auth_token === '' || $time === 0)
 			return FALSE;
 
-		// Is the confirmation link expired
-		if ($time + Kohana::config('config.reset_password_expiration_time') < time())
-			return FALSE;
+		if ($this->confirmation_link_expired($time))	return FALSE;
 
-		// Load user by id
-		if (!$this->loaded())
-			$this->where('id', '=', $id)->find();
+		if (!$this->loaded())	$this->where('id', '=', $id)->find();
 
-		// User does not exist
-		if (!$this->loaded())
-			return FALSE;
+		if (!$this->loaded())	return FALSE;
 
 		// Invalid confirmation token
 		if ($auth_token !== Auth::instance()->hash(sprintf('%s_%s_%d', $this->email, $this->password, $time)))
 			return FALSE;
 
 		return TRUE;
+	}
+	
+	/**
+	 * Checks if the confirmation link is expired or not
+	 * 
+	 * @param boolean
+	 */
+	private function confirmation_link_expired($time)
+	{
+		return ($time + Kohana::config('config.reset_password_expiration_time')) < time();
 	}
 
 	/**
@@ -304,14 +318,14 @@ class Model_User extends Model_Auth_User {
 	 * Validates user's old password
 	 *
 	 * @param  string  field name
-	 * @return void
+	 * @return false on failure
 	 */
 	public function check_password($old_password)
 	{
-		if ($user = Auth::instance()->get_user())
+		if (($user = Auth::instance()->get_user()) && 
+			Auth::instance()->password($user->username) === Auth::instance()->hash($old_password))
 		{
-			if (Auth::instance()->password($user->username) === Auth::instance()->hash($old_password))
-				return;
+			return;
 		}
 
 		return FALSE;
@@ -337,7 +351,7 @@ class Model_User extends Model_Auth_User {
 	 * @param  post   status status of the post
 	 * @return array  Model_Post objects
 	 */
-	public function get_user_posts($page_size, $offset, $post_type = Helper_PostType::QUESTION, $post_status = Helper_PostStatus::ALL)
+	public function get_user_posts($page_size, $offset, $post_type = Model_Post::QUESTION, $post_status = Helper_PostStatus::ALL)
 	{
 		return $this->posts->where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
 			->and_where('post_type', '=', $post_type)
@@ -377,27 +391,6 @@ class Model_User extends Model_Auth_User {
 	}
 
 	/**
-	 * Returns user's post by id
-	 *
-	 * @param  int               post id
-	 * @param  string            post type, default is 'question'
-	 * @throws Kohana_Exception
-	 * @return object            instance of Model_Post
-	 */
-	public function get_post_by_id($id, $post_type = Helper_PostType::QUESTION)
-	{
-		$post = $this->posts->where('id', '=', $id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , $post_type)->find();
-			
-		if (!$post->loaded())
-			throw new Kohana_Exception(sprintf('Get_User_Post::Could not fetch the post by ID: %d for user ID: %d'
-				, $id, $this->id));
-
-		return $post;
-	}
-
-	/**
 	 * Updates user's reputation point according to reputation type and subtract
 	 *
 	 * @param  string reputation type
@@ -408,44 +401,30 @@ class Model_User extends Model_Auth_User {
 		// Calculate user's last reputation value
 		$reputation_value = (int) Model_Setting::instance()->get($reputation_type);
 
-		if ($subtract)
-			$reputation_value *= -1;
+		if ($subtract)	$reputation_value *= -1;
 
 		$this->reputation += $reputation_value;
 			
-		$this->update_user_info(array('latest_activity'));
+		$this->update_last_activity_time();
 	}
 
 	/**
-	 * Updates and saves a users field
-	 *
-	 * @param array columns
+	 * Updates and saves a user's lastest activity time
 	 */
-	public function update_user_info($columns)
+	public function update_last_activity_time()
 	{
-		foreach($columns as $col)
-		{
-			switch($col)
-			{
-				case 'latest_activity':
-					$this->latest_activity = time();
-					break;
-			}
-		}
+		$this->latest_activity = time();
 
 		if (!$this->save())
-		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR
-				, 'Model_User::update_user_info(): Could not update current user. ID: ' . $this->id);
-		}
+				, 'Model_User::update_last_activity_time(): Could not update current user. ID: ' . $this->id);
 	}
-
-	/***** STATIC METHODS *****/
 
 	/**
 	 * Returns user by username
 	 *
 	 * @param $username The username of the user
+	 * @return mixed
 	 */
 	public static function get_user_by_username($username)
 	{

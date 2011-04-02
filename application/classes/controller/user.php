@@ -39,16 +39,16 @@ class Controller_User extends Controller_Template_Main {
 		if (!($user = ORM::factory('user')->get_user_by_username($username)))
 			$this->request->redirect('');
 
-		// Get total questions count
-		$total_questions = $user->count_user_posts(Helper_PostType::QUESTION);
+		$total_questions = $user->count_user_posts(Model_Post::QUESTION);
 
-		// Prepare questions pagination control
 		$pagination_questions = Pagination::factory(array(
 			'total_items' => $total_questions,
 			'items_per_page' => Kohana::config('config.default_profile_questions_page_size'),
 		));
 
 		$questions = $user->get_user_posts($pagination_questions->items_per_page, $pagination_questions->offset);
+		
+		$this->set_index_page_meta_texts($user);
 	}
 
 	/**
@@ -74,7 +74,8 @@ class Controller_User extends Controller_Template_Main {
 			->bind('post', $post)
 			->bind('errors', $errors);
 
-		// Return if form is not submitted
+		$this->set_login_page_meta_texts();
+		
 		if (!$_POST)	return;
 
 		$post = $_POST;
@@ -92,8 +93,7 @@ class Controller_User extends Controller_Template_Main {
 			$errors[] = array('password' => 'Password is required.');
 		}
 
-		if (!empty($errors))
-			return;
+		if (!empty($errors))	return;
 
 		$remember = isset($_POST['remember']);
 
@@ -152,8 +152,9 @@ class Controller_User extends Controller_Template_Main {
 			->set('token', $this->get_csrf_token())
 			->bind('post', $post)
 			->bind('errors', $errors);
+			
+		$this->set_signup_page_meta_texts();
 
-		// Return if form is not submitted
 		if (!$_POST)	return;
 
 		$post = $_POST;
@@ -232,7 +233,6 @@ class Controller_User extends Controller_Template_Main {
 			->bind('post', $post)
 			->bind('errors', $errors);
 
-		// If form is not submitted, return
 		if (!$_POST)	return;
 
 		$post = $_POST;
@@ -385,5 +385,34 @@ class Controller_User extends Controller_Template_Main {
 			$this->auth->logout();
 			$this->user = new Model_User;
 		}
+	}
+	
+	/**
+	 * Sets template's meta fields for index page
+	 * 
+	 * @param object instace of Model_User
+	 */
+	private function set_index_page_meta_texts($user)
+	{
+		$this->prepare_metas($user->username . __(' Profile Page'), 
+			$user->username . __(' Profile Page on ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+	}
+	
+	/**
+	 * Sets template's meta fields for login page
+	 */
+	private function set_login_page_meta_texts()
+	{
+		$this->prepare_metas(__('Login to ') . Kohana::config('config.website_name'), 
+			__('Login to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+	}
+	
+	/**
+	 * Sets template's meta fields for signup page
+	 */
+	private function set_signup_page_meta_texts()
+	{
+		$this->prepare_metas(__('Signup to ') . Kohana::config('config.website_name'), 
+			__('Signup to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
 	}
 }

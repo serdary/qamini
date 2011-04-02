@@ -7,7 +7,7 @@
 		</div>
 		
 		<div>
-			<textarea class="comment-text" id="content_<?php echo $parent_id; ?>" name="content_<?php echo $parent_id; ?>"><?php echo HTML::chars($post->content) ?></textarea>
+			<textarea class="comment-text" id="content_<?php echo $parent_id; ?>" name="content_<?php echo $parent_id; ?>"></textarea>
 		
 			<input type="hidden" name="token" value="<?php echo (isset($token)) ? $token : ''; ?>" />
 			<input type="hidden" name="hdn_parent_id" value="<?php echo $parent_id; ?>" />

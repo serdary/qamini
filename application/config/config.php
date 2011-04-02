@@ -48,7 +48,7 @@ return array(
 	/**
 	 * Default questions page size displayed on profile page
 	 */
-	'default_profile_questions_page_size' => 2,
+	'default_profile_questions_page_size' => 5,
 
 	/**
 	 * Default answers page size displayed on profile page
@@ -59,5 +59,15 @@ return array(
 	 * Default search page size
 	 */
 	'default_search_page_size' => 20,
+
+	/**
+	 * Default max meta title length
+	 */
+	'max_meta_title_length' => 80,
+
+	/**
+	 * Default max meta description length
+	 */
+	'max_meta_desc_length' => 200,
 
 );
