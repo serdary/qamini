@@ -46,7 +46,7 @@ class QaminiMailer {
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'QaminiMailer::send_mail(), view file: ' 
-				. $this->_receiver_mail . ' msg: '. $ex->getMessage());
+				. $this->_view_file . ' msg: '. $ex->getMessage());
 		}
 	}
 	
