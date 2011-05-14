@@ -10,9 +10,6 @@
  */
 class Controller_Tags extends Controller_Template_Main {
 
-	/**
-	 * Calls parent's before method
-	 */
 	public function before()
 	{
 		parent::before();

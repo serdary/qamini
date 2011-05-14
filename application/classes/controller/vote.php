@@ -10,9 +10,6 @@
  */
 class Controller_Vote extends Controller_Basic_Ajax {
 
-	/**
-	 * Calls parent's before method and check login of the current user
-	 */
 	public function before()
 	{
 		parent::before();
@@ -90,17 +87,18 @@ class Controller_Vote extends Controller_Basic_Ajax {
 		$post_id = (int) $_POST['post_id'];
 
 		$post_type = (isset($_POST['post_type']) && $_POST['post_type'] === 'A')
-			? Model_Post::ANSWER
-			: Model_Post::QUESTION;
+			? Helper_PostType::ANSWER
+			: Helper_PostType::QUESTION;
 
-		try{
+		try {
 			if (($post = PostFactory::generate_post($post_type)->get($post_id)) === NULL)
 			{
 				$this->prepare_error_response(__('Post is not available'));
 			}
 		}
 		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Vote::get_voted_post Could not fetch the post by ID: ' . $id);
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, "Vote::get_voted_post Could not fetch the post by ID: $post_id");
+			$this->prepare_error_response(__('An Error Occured'));
 		}
 			
 		return $post;
@@ -109,7 +107,7 @@ class Controller_Vote extends Controller_Basic_Ajax {
 	/**
 	 * Checks if user and post owner is the same person or not
 	 * 
-	 * @param object post
+	 * @param  object post
 	 * @return boolean
 	 */
 	private function user_is_post_owner($post)

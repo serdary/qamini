@@ -57,16 +57,15 @@ class Model_Question extends Model_Post {
 	/**
 	 * Returns post by id and type
 	 *
-	 * @param  int    post id
-	 * @return object instance of Model_Question
+	 * @param  int     post id
+	 * @param  boolean false for cms
+	 * @return object  instance of Model_Question
 	 */
-	public static function get($id)
+	public static function get($id, $only_moderated = TRUE)
 	{
-		$post = ORM::factory('question')
-			->where('id', '=', $id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::QUESTION)->find();
-			
+		if ($only_moderated)	$post = self::get_moderated_question($id);
+		else $post = self::get_question_for_cms($id);
+					
 		if (!$post->loaded())
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the question by ID: ' . $id);
@@ -74,6 +73,35 @@ class Model_Question extends Model_Post {
 		}
 
 		return $post;
+	}
+	
+	
+	/**
+	 * Gets moderated question
+	 * 
+	 * @param  int    post id
+	 * @return object instance of Model_Question
+	 */
+	public static function get_moderated_question($id)
+	{			
+		return ORM::factory('question')
+			->where('id', '=', $id)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type','=' , Helper_PostType::QUESTION)->find();
+	}
+	
+	/**
+	 * Gets question without checking if it is moderated or not
+	 * 
+	 * @param  int    post id
+	 * @return object instance of Model_Question
+	 */	
+	public static function get_question_for_cms($id)
+	{
+		return ORM::factory('question')
+			->where('id', '=', $id)
+			->and_where('post_type','=' , Helper_PostType::QUESTION)->find();
 	}
 	
   	/**
@@ -86,11 +114,18 @@ class Model_Question extends Model_Post {
 	 */
 	public static function get_user_question_by_id($id, $user)
 	{
-		$question = ORM::factory('question')->where('id', '=', $id)
-			->and_where('user_id', '=', $user->id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::QUESTION)->find();
-			
+		if($user->has('roles', ORM::factory('role', array('name' => 'admin'))))
+		{
+			return Model_Question::get($id, FALSE);
+		}
+		else
+		{
+			$question = ORM::factory('question')->where('id', '=', $id)
+				->and_where('user_id', '=', $user->id)
+				->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+				->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+				->and_where('post_type','=' , Helper_PostType::QUESTION)->find();
+		}	
 		if (!$question->loaded())
 			throw new Kohana_Exception(
 				sprintf('get_user_question_by_id::Could not fetch the post by ID: %d for user ID: %d', $id, $user->id));
@@ -129,8 +164,8 @@ class Model_Question extends Model_Post {
 	private static function get_answered_questions($page_size, $offset)
 	{
 		return ORM::factory('question')->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::QUESTION)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::QUESTION)
 			->limit($page_size)->offset($offset)
 			->order_by('answer_count', 'desc')->order_by('latest_activity', 'desc')->find_all();
 	}
@@ -145,8 +180,8 @@ class Model_Question extends Model_Post {
 	private static function get_unanswered_questions($page_size, $offset)
 	{
 		return ORM::factory('question')->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::QUESTION)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::QUESTION)
 			->limit($page_size)->offset($offset)->and_where('answer_count', '=', 0)
 			->order_by('latest_activity', 'desc')->find_all();
 	}
@@ -161,8 +196,8 @@ class Model_Question extends Model_Post {
 	private static function get_all_questions($page_size, $offset)
 	{
 		return ORM::factory('question')->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::QUESTION)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::QUESTION)
 			->limit($page_size)->offset($offset)
 			->order_by('latest_activity', 'desc')->find_all();
 	}
@@ -180,7 +215,7 @@ class Model_Question extends Model_Post {
 	{
 		$this->create_post($post);
 
-		$this->process_tags_if_provided($post);
+		$this->process_tags_if_posted($post);
 
 		return TRUE;
 	}
@@ -191,7 +226,7 @@ class Model_Question extends Model_Post {
 	 * @param array post data
 	 * @param string process type
 	 */
-	private function process_tags_if_provided($post, $process = 'add')
+	private function process_tags_if_posted($post, $process = 'add')
 	{
 		if (!isset($post['tags']))	return;
 		
@@ -200,13 +235,13 @@ class Model_Question extends Model_Post {
 	}
 	
 	/**
-	 * Calls parent to save comment, handles reputation
+	 * Calls parent to save question, handles reputation
 	 *
 	 * @param  array posted data
 	 */	
 	protected function create_post($post)
 	{
-		$this->post_type = Model_Post::QUESTION;
+		$this->post_type = Helper_PostType::QUESTION;
 		
 		parent::create_post($post);
 		
@@ -226,13 +261,16 @@ class Model_Question extends Model_Post {
 	 */
 	public function edit($post)
 	{
-		// Currently only logged in users can edit questions.
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		// Only logged in users and admins can modify questions.
+		$user = new Model_User;
+		if (!$this->user_can_modify($user))
 			throw new Kohana_Exception('Model_Question::edit(): Could not get current user');
 
+		$this->check_updated_by_admin($user);
+		
 		$this->save_post($post);
 		
-		$this->process_tags_if_provided($post, 'update');
+		$this->process_tags_if_posted($post, 'update');
 			
 		$user->update_last_activity_time();
 			
@@ -249,7 +287,7 @@ class Model_Question extends Model_Post {
 	public function delete()
 	{
 		// Currently only logged in users can delete questions.
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Question::delete(): Could not get current user');
 
 		// The question marked anonymous (user_id = 0) instead of marked deleted.
@@ -331,8 +369,8 @@ class Model_Question extends Model_Post {
 			
 		return ORM::factory('question')->and_where_open()
 			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::QUESTION)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::QUESTION)
 			->and_where_close()
 			->and_where_open()
 			->or_where('title', 'LIKE', '%' . $query . '%')
@@ -353,8 +391,8 @@ class Model_Question extends Model_Post {
 	{
 		return ORM::factory('question')->and_where_open()
 			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::QUESTION)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::QUESTION)
 			->and_where_close()
 			->and_where_open()
 			->or_where('title', 'LIKE', '%' . $query . '%')

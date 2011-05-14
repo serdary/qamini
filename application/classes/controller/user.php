@@ -10,9 +10,6 @@
  */
 class Controller_User extends Controller_Template_Main {
 
-	/**
-	 * Calls parent's before method
-	 */
 	public function before()
 	{
 		parent::before();
@@ -39,7 +36,7 @@ class Controller_User extends Controller_Template_Main {
 		if (!($user = ORM::factory('user')->get_user_by_username($username)))
 			$this->request->redirect('');
 
-		$total_questions = $user->count_user_posts(Model_Post::QUESTION);
+		$total_questions = $user->count_user_posts(Helper_PostType::QUESTION);
 
 		$pagination_questions = Pagination::factory(array(
 			'total_items' => $total_questions,

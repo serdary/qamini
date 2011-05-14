@@ -5,6 +5,7 @@ var Detail = function() {
 				
 				if (data.error !== undefined)
 				{
+					if (data.message === undefined)	return;
 					$('.result-' + parentId).text(data.message).addClass('error-div').fadeIn(700);
 				}
 				else
@@ -20,12 +21,15 @@ var Detail = function() {
 			},
 			
 			addCommentError: function(data, parentId) {
+				if (data.message === undefined)	return;
+				
 				$('.result-' + parentId).text(data.message).addClass('error-div').fadeIn(700);
 			},
 
-			deleteCommentSuccess: function(data, commentId) {
+			deleteCommentSuccess: function(data, commentId) {				
 				if (data.error !== undefined)
 				{
+					if (data.message === undefined)	return;
 					$('.single-comment-' + commentId).parent().find('.general-results').text(data.message).addClass('error-div').fadeIn(700);
 				}
 				else
@@ -37,12 +41,15 @@ var Detail = function() {
 			},
 			
 			deleteCommentError: function(data, commentId) {
+				if (data.message === undefined)	return;
+				
 				$('.single-comment-' + commentId).parent().find('.general-results').text(data.message).addClass('error-div').fadeIn(700);
 			},
 
-			votePostSuccess: function(data, postId, voteType) {
+			votePostSuccess: function(data, postId, voteType) {				
 				if (data.error !== undefined)
 				{
+					if (data.message === undefined)	return;
 					$('.voting-error-' + postId).text(data.message).addClass('error-div').fadeIn(700);
 				}
 				else
@@ -54,14 +61,18 @@ var Detail = function() {
 			},
 			
 			votePostError: function(data, postId, voteType) {
+				if (data.message === undefined)	return;
+				
 				$('.voting-error-' + postId).text(data.message).addClass('error-div').fadeIn(700);
 			},
 			
-			ownPostVoteError: function(postId) {
+			ownPostVoteError: function(postId) {				
 				$('.voting-error-' + postId).text('You cannot vote on your own posts.').addClass('error-div').fadeIn(700);
 			},
 
 			acceptPostSuccess: function(data, postId) {
+				if (data.message === undefined)	return;
+				
 				if (data.error !== undefined)
 				{
 					$('.voting-error-' + postId).text(data.message).addClass('error-div').fadeIn(700);
@@ -78,10 +89,12 @@ var Detail = function() {
 			},
 			
 			acceptPostError: function(data, postId) {
+				if (data.message === undefined)	return;
+				
 				$('.voting-error-' + postId).text(data.message).addClass('error-div').fadeIn(700);
 			},
 			
-			ownPostAcceptError: function(data, postId) {
+			ownPostAcceptError: function(data, postId) {				
 				$('.voting-error-' + postId).text('You cannot accept your own posts.').addClass('error-div').fadeIn(700);
 			}
 	};

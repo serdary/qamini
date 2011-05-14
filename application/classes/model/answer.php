@@ -40,23 +40,50 @@ class Model_Answer extends Model_Post {
 	/**
 	 * Returns post by id
 	 *
-	 * @param  int    post id
-	 * @return object instance of Model_Post
+	 * @param  int     post id
+	 * @param  boolean false for cms
+	 * @return object  instance of Model_Post
 	 */
-	public static function get($id)
+	public static function get($id, $only_moderated = TRUE)
 	{
-		$post = ORM::factory('answer')
-			->where('id', '=', $id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::ANSWER)->find();
-			
+		if ($only_moderated)	$post = self::get_moderated_answer($id);
+		else $post = self::get_answer_for_cms($id);
+		
 		if (!$post->loaded())
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the answer by ID: ' . $id);
 			return NULL;
 		}
-		
+	
 		return $post;
+	}
+	
+	/**
+	 * Gets moderated answer
+	 * 
+	 * @param  int    post id
+	 * @return object instance of Model_Answer
+	 */
+	public static function get_moderated_answer($id)
+	{
+		return ORM::factory('answer')
+			->where('id', '=', $id)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_type','=' , Helper_PostType::ANSWER)->find();
+	}
+	
+	/**
+	 * Gets answer without checking if it is moderated or not
+	 * 
+	 * @param  int    post id
+	 * @return object instance of Model_Answer
+	 */	
+	public static function get_answer_for_cms($id)
+	{
+		return ORM::factory('answer')
+			->where('id', '=', $id)
+			->and_where('post_type','=' , Helper_PostType::ANSWER)->find();
 	}
 	
   	/**
@@ -69,10 +96,18 @@ class Model_Answer extends Model_Post {
 	 */
 	public static function get_user_answer_by_id($id, $user)
 	{
-		$answer = ORM::factory('answer')->where('id', '=', $id)
-			->and_where('user_id', '=', $user->id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::ANSWER)->find();
+		if($user->has('roles', ORM::factory('role', array('name' => 'admin'))))
+		{
+			return Model_Answer::get($id, FALSE);
+		}
+		else
+		{
+			$answer = ORM::factory('answer')->where('id', '=', $id)
+				->and_where('user_id', '=', $user->id)
+				->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+				->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+				->and_where('post_type','=' , Helper_PostType::ANSWER)->find();
+		}
 			
 		if (!$answer->loaded())
 			throw new Kohana_Exception(
@@ -93,9 +128,9 @@ class Model_Answer extends Model_Post {
 		$answers = array();
 				
 		$db_result = ORM::factory('answer')
-			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::ANSWER)
+			->where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_type', '=', Helper_PostType::ANSWER)
 			->and_where('parent_post_id', '=', $parent_post_id)
 			->order_by('latest_activity', 'desc')
 			->find_all();
@@ -117,9 +152,9 @@ class Model_Answer extends Model_Post {
 	 * 
 	 * @return boolean
 	 */
-	private function is_accepted()
+	public function is_accepted()
 	{
-		return $this->post_status === Helper_PostStatus::ACCEPTED;
+		return $this->accepted === 1;
 	}
 
 	/**
@@ -134,7 +169,7 @@ class Model_Answer extends Model_Post {
 	public function insert($post, $question_id)
 	{
 		$this->parent_post_id = $question_id;
-		$this->post_type = Model_Post::ANSWER;
+		$this->post_type = Helper_PostType::ANSWER;
 				
 		$this->create_post($post);
 			
@@ -165,7 +200,7 @@ class Model_Answer extends Model_Post {
 	private function update_parent_answer_count($increase = TRUE)
 	{			
 		try {
-			$this->update_parent_stats('answer_count', $increase);
+			$this->update_parent_stats(Helper_PostType::ANSWER, $increase);
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, $ex->getMessage());
@@ -184,10 +219,13 @@ class Model_Answer extends Model_Post {
 	 */
 	public function edit($post)
 	{
-		// Currently only logged in users can edit answers.
-		if (($user = Auth::instance()->get_user()) === FALSE)
-			throw new Kohana_Exception('Model_Answer::edit(): Could not get current user');
+		// Only logged in users and admins can modify answers.
+		$user = new Model_User;
+		if (!$this->user_can_modify($user))
+			throw new Kohana_Exception('Model_Question::edit(): Could not get current user');
 
+		$this->check_updated_by_admin($user);
+		
 		$this->save_post($post);
 			
 		$user->update_last_activity_time();
@@ -209,7 +247,7 @@ class Model_Answer extends Model_Post {
 	public function delete()
 	{
 		// Currently only logged in users can delete answers.
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Answer::delete(): Could not get current user');
 
 		$this->mark_post_anonymous();
@@ -278,7 +316,7 @@ class Model_Answer extends Model_Post {
 	 */
 	public function accept_post()
 	{
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Answer::accept_post(): Could not get current user');
 			
 		if ($this->is_deleted())	return -1;
@@ -307,7 +345,7 @@ class Model_Answer extends Model_Post {
 	 */
 	private function process_undo_accept()
 	{
-		$this->post_status = Helper_PostStatus::PUBLISHED;
+		$this->accepted = 0;
 		$this->save();
 
 		$this->handle_reputation(Model_Reputation::ACCEPTED_ANSWER, TRUE);
@@ -319,7 +357,7 @@ class Model_Answer extends Model_Post {
 	 */
 	private function process_accept()
 	{
-		$this->post_status = Helper_PostStatus::ACCEPTED;
+		$this->accepted = 1;
 		$this->save();
 
 		$this->handle_reputation(Model_Reputation::ACCEPTED_ANSWER);
@@ -334,8 +372,9 @@ class Model_Answer extends Model_Post {
 	private function has_accepted_answers()
 	{
 		$count = $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('parent_post_id','=' , $this->parent_post_id)
-			->and_where('post_status','=' , Helper_PostStatus::ACCEPTED)
+			->and_where(Helper_PostStatus::ACCEPTED, '=' , 1)
 			->count_all();
 
 		return $count > 0;

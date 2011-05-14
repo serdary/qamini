@@ -198,5 +198,35 @@ Route::set('homepage', '')->defaults(array(
 		'action'     => 'newest',
 ));
 
+// Route setup for the admin
+Route::set('admin', '<directory>(/<controller>(/<action>(/<id>)))',
+array(
+'directory' => '(admin)'
+))
+->defaults(array(
+'controller' => 'main',
+'action'     => 'index',
+));
+
+// Route setup for the post administration
+Route::set('admin_post', '<directory>(/<controller>(/<action>(/<type>(/<moderation>))))',
+	array(
+		'directory' => '(admin)'
+	))
+	->defaults(array(
+		'controller' => 'post',
+		'action'     => 'index',
+	));
+
+// Route setup for admin ajax actions
+Route::set('admin_ajax', '<directory>/ajax(/<action>(/<id>))',
+	array(
+		'directory' => '(admin)'
+	))
+	->defaults(array(
+		'controller' => 'ajax',
+		'action'     => 'index',
+	));
+
 // Cache the routes in production
 Route::cache(Kohana::$environment === Kohana::PRODUCTION);

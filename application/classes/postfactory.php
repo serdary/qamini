@@ -13,9 +13,9 @@ class PostFactory {
 	{
 		switch ($post_type)
 		{
-			case Model_Post::ANSWER:
+			case Helper_PostType::ANSWER:
 				return new Model_Answer;
-			case Model_Post::COMMENT:
+			case Helper_PostType::COMMENT:
 				return new Model_Comment;
 			default:
 				return new Model_Question;
@@ -23,7 +23,7 @@ class PostFactory {
 	}
 	
 	public function get($post_id)
-	{
+	{ 
 		return self::get($post_id);
 	}
 }

@@ -19,10 +19,6 @@
 	protected $_has_many = array('tags' => array('model' => 'tag', 'through' => 'post_tag'));
 	
 	protected $_table_name = 'posts';
-
-	const QUESTION = 'question';
-	const ANSWER = 'answer';
-	const COMMENT = 'comment';
 	
 	/**
 	 * Validation rules for post object
@@ -56,16 +52,41 @@
 	/**
 	 * Returns post by id
 	 *
-	 * @param int post id
-	 * @return object
+	 * @param  int post id
+	 * @param  boolean false for cms
+	 * @return object instance of Model_Post
 	 */
-	public static function get($id)
+	public static function get($id, $only_moderated = TRUE)
 	{
-		$post = ORM::factory('post')
-			->where('id', '=', $id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)->find();
-		
+		if ($only_moderated)	$post = self::get_moderated_post($id);
+		else $post = self::get_post_for_cms($id);
+				
 		return Model_Post::object_loaded($post, $id) ? $post : NULL;
+	}
+	
+ 	/**
+	 * Gets moderated post
+	 * 
+	 * @param  int     post id
+	 * @return object  instance of Model_Post
+	 */
+	public static function get_moderated_post($id)
+	{			
+		return ORM::factory('post')
+			->where('id', '=', $id)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)->find();
+	}
+	
+	/**
+	 * Gets a post without checking if it is moderated or not
+	 * 
+	 * @param  int     post id
+	 * @return object  instance of Model_Post
+	 */	
+	public static function get_post_for_cms($id)
+	{
+		return ORM::factory('post')->where('id', '=', $id)->find();
 	}
 	
  	/**
@@ -166,7 +187,7 @@
 	public function count_all_posts($post_type)
 	{
 		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', $post_type)->count_all();
 	}
 
@@ -179,7 +200,7 @@
 	public function count_answered_posts($post_type)
 	{
 		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', $post_type)
 			->and_where('answer_count', '>', 0)->count_all();
 	}
@@ -193,7 +214,7 @@
 	public function count_unanswered_posts($post_type)
 	{
 		return $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', $post_type)
 			->and_where('answer_count', '=', 0)->count_all();
 	}
@@ -269,7 +290,7 @@
 	 */
 	public function handle_submitted_post_data(&$post)
 	{
-		if (Auth::instance()->get_user() !== FALSE)	$this->handle_submitted_data_for_user($post);
+		if (Auth::instance()->get_user() !== NULL)	$this->handle_submitted_data_for_user($post);
 		else	$this->handle_submitted_data_for_guest($post);
 	}
 	
@@ -331,6 +352,8 @@
 	
 	/**
 	 * Adds user id if post is submitted by a user
+	 * 
+	 * @param array posted data
 	 */
 	private function add_user_id_to_post($post)
 	{
@@ -362,7 +385,7 @@
 	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
 	protected function save_post($post)
-	{
+	{			
 		$this->title = (isset($post['title'])) ? trim($post['title']) : NULL;
 		$this->slug = (isset($post['title'])) ? URL::title($this->title) : NULL;
 		$this->content = $post['content'];
@@ -389,9 +412,9 @@
 	protected function mark_post_anonymous()
 	{
 		$this->latest_activity = time();
-		$this->post_moderation = Helper_PostModeration::MARKED_ANONYMOUS;
+		$this->marked_anonymous = 1;
 		$this->user_id = 0;
-		$this->created_by = 'anonymous';
+		$this->created_by = Helper_PostStatus::MARKED_ANONYMOUS;
 		$this->notify_email = '0';
 
 		if (!$this->save())
@@ -400,22 +423,35 @@
 	}
 
 	/**
-	 * Handles reputation points, updates appropriate user columns.
+	 * Calls Model_Post::handle_user_reputation() to process user reputation
 	 *
 	 * @param  string reputation type
 	 * @param  bool true if rep. point will be decreased according to rep. type
-	 * @uses   Model_Reputation::create_reputation()
-	 * @uses   Model_Reputation::delete_reputation()
-	 * @uses   Model_User::update_reputation()
+	 * @uses   Model_Post::handle_user_reputation()
 	 */
 	protected function handle_reputation($reputation_type, $subtract = FALSE)
 	{
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): Could not get current user.');
 			return;
 		}
-
+		
+		$this->handle_user_reputation($user, $reputation_type, $subtract);
+	}
+	
+	/**
+	 * Handles user's reputation points, updates relevant user columns.
+	 *
+	 * @param  string reputation type
+	 * @param  bool true if rep. point will be decreased according to rep. type
+	 * @param  object user
+	 * @uses   Model_Reputation::create_reputation()
+	 * @uses   Model_Reputation::delete_reputation()
+	 * @uses   Model_User::update_reputation()
+	 */
+	protected function handle_user_reputation($user, $reputation_type, $subtract)
+	{
 		switch ($reputation_type)
 		{
 			case Model_Reputation::QUESTION_ADD:
@@ -433,8 +469,9 @@
 			else
 				$reputation = Model_Reputation::create_reputation($user->id, $this->id, $reputation_type);
 
-			// Update user reputation point
-			// By default current user's point is changed, but in some voting actions, owner user's reputation is also changed
+			/* Update user reputation point
+			   By default current user's point is changed, but in some voting actions, 
+			   owner user's reputation is also changed */
 			switch ($reputation_type)
 			{
 				case Model_Reputation::OWN_ACCEPTED_ANSWER:
@@ -479,7 +516,7 @@
 	 */
 	protected function check_user_previous_votes($vote_type, $reputation_type_up, $reputation_type_down)
 	{
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Post::check_user_previous_votes(): Could not get current user');
 
 		$previous_vote_up = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
@@ -518,7 +555,7 @@
 			$this->save();
 		}
 		catch (Exception $ex) {
-			throw new Kohana_Exception('Model_Answer::check_user_previous_votes(): ' . $ex->getMessage());
+			throw new Kohana_Exception('Model_Post::check_user_previous_votes(): ' . $ex->getMessage());
 		}
 		
 		return -1;
@@ -541,17 +578,20 @@
 	/**
 	 * Increases or decreases parent post's relevant (answer or comment count) field
 	 *
-	 * @param  string count column name of Model_Post object
+	 * @param  string post type to be added
 	 * @param  bool default increases parent question's relevant field
 	 * @throws ORM_Validation_Exception
 	 */
-	protected function update_parent_stats($count_column, $increase = TRUE)
+	protected function update_parent_stats($post_type, $increase = TRUE)
 	{
-		if (($parent_post = Model_Post::get($this->parent_post_id)) === NULL)
+		if (($parent_post = Model_Post::get($this->parent_post_id, FALSE)) === NULL)
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::update_parent_stats(): Could not get parent post. ID: ' . $this->id . ', parent ID: ' . $this->parent_post_id);
 			return;
 		}
+		
+		if ($post_type === Helper_PostType::ANSWER)	$count_column = 'answer_count';
+		else $count_column = 'comment_count';
 
 		$parent_post->$count_column += ($increase) ? 1 : -1;
 
@@ -696,6 +736,31 @@
 	}
 	
  	/**
+	 * Checks if user can modify or not
+	 * 
+	 * @param  object to be filled by Model_User object if valid
+	 * @return boolean
+	 */
+	protected function user_can_modify(&$user)
+	{
+		if (($user = Auth::instance()->get_user()) === NULL) return FALSE;
+		
+		return ($this->user_id === $user->id || 
+			$user->has('roles', ORM::factory('role', array('name' => 'admin'))));
+	}
+	
+	/**
+	 * Checks if question is updated by an admin. If so, mark updated_by field
+	 * 
+	 * @param object Model_User instance
+	 */
+	protected function check_updated_by_admin($user)
+	{
+		if ($user->id !== $this->user_id)
+			$this->updated_by = $user->username;
+	}
+		
+ 	/**
 	 * Returns all tags of the posts
 	 * 
 	 * @return array
@@ -704,4 +769,136 @@
 	{
 		return ORM::factory('post', $this->id)->tags->find_all();
 	}
+	
+	/* CMS METHODS */
+	
+	/**
+	 * Returns total count of the posts for cms pages
+	 *
+	 * @param  string post type
+	 * @param  string post moderation type
+	 * @return int
+	 */
+	public function cms_count_posts($post_type, $moderation_type)
+	{
+		return $this->where('post_moderation', '=', $moderation_type)
+			->and_where('post_type', '=', $post_type)->count_all();
+	}
+		
+	/**
+	 * Returns questions by page size and offset for cms pages
+	 * 
+	 * @param  int    page size
+	 * @param  int    offset
+	 * @param  string post type
+	 * @param  string post moderation type
+	 * @return array  Model_Question objects
+	 */
+	public static function cms_get_posts($page_size, $offset, $type, $moderation_type)
+	{
+		return ORM::factory('post')->where('post_moderation', '=', $moderation_type)
+			->and_where('post_type', '=', $type)
+			->limit($page_size)->offset($offset)
+			->order_by('answer_count', 'desc')->order_by('latest_activity', 'desc')->find_all();
+	}
+	
+	/**
+	 * Moderates a post
+	 * 
+	 * @param string moderation type
+	 * @return int
+	 */
+	public function cms_moderate($moderation_type)
+	{
+		if (!$this->cms_valid_moderation($moderation_type))	return -1;
+		
+		if ($this->post_moderation === $moderation_type)	return 1;
+		
+		$old_moderation_type = $this->post_moderation;	
+		$this->post_moderation = $moderation_type;
+		
+		try {
+			if ($this->save())
+			{
+				$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type);
+				return 1;
+			}
+			else	return 0;
+		}
+		catch (Exception $ex) {
+			throw new Kohana_Exception('Model_Post::cms_moderate(): ' . $ex->getMessage());
+		}
+	}
+	
+	/**
+	 * Checks if posted moderation type value is valid
+	 * 
+	 * @param string moderation type
+	 * @return boolean
+	 */
+	private function cms_valid_moderation($moderation_type)
+	{
+		return $moderation_type === Helper_PostModeration::APPROVED 
+			|| $moderation_type === Helper_PostModeration::DISAPPROVED
+			|| $moderation_type === Helper_PostModeration::DELETED
+			|| $moderation_type === Helper_PostModeration::IN_REVIEW
+			|| $moderation_type === Helper_PostModeration::NORMAL;
+	}
+	
+	/**
+	 * After a post has been marked, user's reputation, parent post's (if any) question/answer count
+	 * and user's question/answer count etc. should be changed 
+	 * 
+	 * @param string post's old moderation type
+	 * @param string post's new moderation type
+	 */
+	private function cms_process_post_moderation_effects($old_moderation_type, $new_moderation_type)
+	{
+		if ($new_moderation_type === Helper_PostModeration::IN_REVIEW 
+			|| $this->user_id === NULL || $this->user_id < 1
+			|| ($user = ORM::factory('user')->get_user_by_id($this->user_id)) === NULL
+			)
+			return;
+			
+		switch ($this->post_type)
+		{
+			case Helper_PostType::QUESTION:
+				$reputation_type = Helper_ReputationType::QUESTION_ADD;
+				break;
+			case Helper_PostType::ANSWER:
+				$reputation_type = Helper_ReputationType::ANSWER_ADD;
+				break;
+			case Helper_PostType::COMMENT:
+				$reputation_type = Helper_ReputationType::COMMENT_ADD;
+				break;
+		}
+			
+		switch ($new_moderation_type)
+		{
+			case Helper_PostModeration::APPROVED:
+			case Helper_PostModeration::NORMAL:
+				
+				if ($old_moderation_type === Helper_PostModeration::APPROVED || 
+					$old_moderation_type === Helper_PostModeration::NORMAL)	
+					return;
+				
+				$this->handle_user_reputation($user, $reputation_type, FALSE);
+				
+				$this->update_parent_stats($this->post_type, TRUE);
+				break;
+
+			case Helper_PostModeration::DELETED:
+			case Helper_PostModeration::DISAPPROVED:
+				
+				if ($old_moderation_type === Helper_PostModeration::DELETED || 
+					$old_moderation_type === Helper_PostModeration::DISAPPROVED)	
+					return;
+					
+				$this->handle_user_reputation($user, $reputation_type, TRUE);
+		
+				$this->update_parent_stats($this->post_type, FALSE);
+				break;
+		}
+	}
+	/* CMS METHODS */
 }

@@ -10,9 +10,6 @@
  */
 class Controller_Questions extends Controller_Template_Main {
 
-	/**
-	 * Calls parent's before method
-	 */
 	public function before()
 	{
 		parent::before();
@@ -498,11 +495,11 @@ class Controller_Questions extends Controller_Template_Main {
 		switch ($requested_action)
 		{
 			case 'action_unanswered':
-				return ORM::factory('post')->count_unanswered_posts(Model_Post::QUESTION);
+				return ORM::factory('post')->count_unanswered_posts(Helper_PostType::QUESTION);
 			case 'action_index':
 			case 'action_newest':
 			default:
-				return ORM::factory('post')->count_all_posts(Model_Post::QUESTION);
+				return ORM::factory('post')->count_all_posts(Helper_PostType::QUESTION);
 		}
 	}
 	

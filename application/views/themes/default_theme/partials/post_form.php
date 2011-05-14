@@ -6,7 +6,7 @@
 
 	<?php include Kohana::find_file('views', $theme_dir . '/partials/errors') ?>
 
-	<?php if ($form_type === Model_Post::QUESTION): ?>
+	<?php if ($form_type === Helper_PostType::QUESTION): ?>
 	<div class="row">
 		<label for="title"><?php echo __('Title') ?><span>*</span></label>
 		<input id="title" name="title" type="text" value="<?php echo HTML::chars($post->title) ?>" maxlength="300" class="text-input" />
@@ -35,7 +35,7 @@
 	</div>
 	<?php endif ?>
 	
-	<?php if ($form_type === Model_Post::QUESTION): ?>
+	<?php if ($form_type === Helper_PostType::QUESTION): ?>
 	<div class="row">
 		<label for="tags"><?php echo __('Tags') ?></label>
 		<input id="tags" name="tags" type="text" maxlength="150" class="text-input" value="<?php echo $tag_list ?>"/>

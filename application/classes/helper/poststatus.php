@@ -10,6 +10,7 @@ class Helper_PostStatus {
 	const PUBLISHED = 'published';
 	const ACCEPTED = 'accepted';
 	const CLOSED = 'closed';
+	const MARKED_ANONYMOUS = 'marked_anonymous';
 	
 	// Below constants do not have DB enum 
 	const ALL = 'all';

@@ -3,7 +3,7 @@
              ->bind('notify_user', $notify_user)
              ->bind('errors', $errors)
              ->set('post', $post)
-             ->set('form_type', Model_Post::ANSWER)
+             ->set('form_type', Helper_PostType::ANSWER)
              ->set('form_action', URL::site(Route::get('answer')
                    ->uri(array('action' => 'edit', 'id' => $post->id, 'question_id' => $question_id))))
              ->set('form_title', __('Update Answer'))

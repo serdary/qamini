@@ -448,7 +448,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 			return;
 		}
     	
-    	$post_type = Model_Post::QUESTION;
+    	$post_type = Helper_PostType::QUESTION;
     	
         if ($post->user_id != 0)
     	{
@@ -517,7 +517,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 			return;
 		}
     	
-    	$post_type = Model_Post::ANSWER;
+    	$post_type = Helper_PostType::ANSWER;
     	
         if ($post->user_id != 0)
     	{

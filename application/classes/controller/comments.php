@@ -10,9 +10,6 @@
  */
 class Controller_Comments extends Controller_Basic_Ajax {
 
-	/**
-	 * Calls parent's before method
-	 */
 	public function before()
 	{
 		parent::before();

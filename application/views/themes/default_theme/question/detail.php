@@ -170,7 +170,7 @@ if ($user_logged_in)
 		if ($user_id === $post->user_id && $user_id !== $answer->user_id)
 		{
 			$own_post = (int) ($answer->user_id === $user_id);
-			$link_class = ($answer->post_status === Helper_PostStatus::ACCEPTED) ? 'accept-post accepted' : 'accept-post';
+			$link_class = ($answer->is_accepted()) ? 'accept-post accepted' : 'accept-post';
 			
 			echo '<span class="accept-post-holder">', 
 				 HTML::anchor(Route::get('vote')->uri(array('action' => 'accept'
@@ -180,7 +180,7 @@ if ($user_logged_in)
 							        , 'id' => 'accept-post-' . $answer->id)), 
 				'</span>';
 		}
-		elseif ($answer->post_status === Helper_PostStatus::ACCEPTED)
+		elseif ($answer->is_accepted())
 		{
 			echo '<span class="accept-post-holder"><a class="accept-post accepted">', __('accepted'), '</a></span>';
 		}
@@ -316,7 +316,7 @@ echo View::factory($theme_dir.'answer/add')
 		             ->bind('notify_user', $handled_post['notify_user'])
 		             ->bind('errors', $handled_post['errors'])
 		             ->set('answer', $current_answer)
-		             ->set('form_type', Model_Post::ANSWER)
+		             ->set('form_type', Helper_PostType::ANSWER)
 		             ->set('form_action', URL::site(Route::get('question')->uri(
 		                   array('action' => 'detail', 'id' => $post->id, 'slug' => $post->slug))))
 		             ->set('form_title', __('Add Answer'))

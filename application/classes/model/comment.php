@@ -13,15 +13,14 @@ class Model_Comment extends Model_Post {
 	/**
 	 * Returns post by id
 	 *
-	 * @param  int    post id
-	 * @return object instance of Model_Comment
+	 * @param  int     post id
+	 * @param  boolean false for cms
+	 * @return object  instance of Model_Comment
 	 */
-	public static function get($id)
-	{
-		$post = ORM::factory('comment')
-			->where('id', '=', $id)
-			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::COMMENT)->find();
+	public static function get($id, $only_moderated = TRUE)
+	{			
+		if ($only_moderated)	$post = self::get_moderated_comment($id);
+		else $post = self::get_comment_for_cms($id);
 			
 		if (!$post->loaded())
 		{
@@ -30,6 +29,34 @@ class Model_Comment extends Model_Post {
 		}
 
 		return $post;
+	}
+	
+	/**
+	 * Gets moderated comment
+	 * 
+	 * @param  int     post id
+	 * @return object  instance of Model_Comment
+	 */
+	public static function get_moderated_comment($id)
+	{
+		return ORM::factory('comment')
+			->where('id', '=', $id)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type','=' , Helper_PostType::COMMENT)->find();
+	}
+	
+	/**
+	 * Gets comment without checking if it is moderated or not
+	 * 
+	 * @param  int     post id
+	 * @return object  instance of Model_Comment
+	 */	
+	public static function get_comment_for_cms($id)
+	{
+		return ORM::factory('comment')
+			->where('id', '=', $id)
+			->and_where('post_type','=' , Helper_PostType::COMMENT)->find();
 	}
 	
   	/**
@@ -45,7 +72,7 @@ class Model_Comment extends Model_Post {
 		$comment = ORM::factory('comment')->where('id', '=', $id)
 			->and_where('user_id', '=', $user->id)
 			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_type','=' , Model_Post::COMMENT)->find();
+			->and_where('post_type','=' , Helper_PostType::COMMENT)->find();
 			
 		if (!$comment->loaded())
 			throw new Kohana_Exception(
@@ -66,7 +93,7 @@ class Model_Comment extends Model_Post {
 	public function insert($post, $parent_id)
 	{
 		// Currently only logged in users can add comments
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Comment::add(): Could not get current user');
 	
 		$post['user_id'] = $user->id;
@@ -86,7 +113,7 @@ class Model_Comment extends Model_Post {
 	 */	
 	protected function create_post($post)
 	{
-		$this->post_type = Model_Post::COMMENT;
+		$this->post_type = Helper_PostType::COMMENT;
 		
 		parent::create_post($post);
 
@@ -105,7 +132,7 @@ class Model_Comment extends Model_Post {
 	private function update_parent_comment_count($increase = TRUE)
 	{			
 		try {
-			$this->update_parent_stats('comment_count', $increase);
+			$this->update_parent_stats(Helper_PostType::COMMENT, $increase);
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, $ex->getMessage());
@@ -122,7 +149,7 @@ class Model_Comment extends Model_Post {
 	public function delete()
 	{
 		// Currently only logged in users can delete comments.
-		if (($user = Auth::instance()->get_user()) === FALSE)
+		if (($user = Auth::instance()->get_user()) === NULL)
 			throw new Kohana_Exception('Model_Comment::delete(): Could not get current user');
 
 		$this->latest_activity = time();
@@ -151,8 +178,8 @@ class Model_Comment extends Model_Post {
 
 		$results = ORM::factory('comment')
 			->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-			->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-			->and_where('post_type', '=', Model_Post::COMMENT)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_type', '=', Helper_PostType::COMMENT)
 			->and_where('parent_post_id', 'IN', DB::Expr(sprintf('(%s)', implode(',', $parent_ids))))
 			->order_by('latest_activity', 'desc')
 			->find_all();

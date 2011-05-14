@@ -11,7 +11,7 @@ Qamini Description
 ------------------
 
 Qamini is an open source question & answer software developed with MySql, PHP 5 and Kohana 3.1 MVC Framework.
-Main concern is simplicity, so there is no lots of extra features like thumbnails or badges.
+Main concern is simplicity, so there is no lots of extra features like thumbnails, post revisions or badges.
 
 Qamini is themable, including all views, static files such as javascripts, stylesheets and images.
 
@@ -23,7 +23,7 @@ Current features
 * Ask Question (With / Without Registration)
 * Add Answers (With / Without Registration)
 * Add Comments
-* Vote up / down questions or answers
+* Vote up / down for questions or answers
 * Accept answers
 * Get reputation points
 * Tags

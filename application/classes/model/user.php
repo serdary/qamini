@@ -351,9 +351,10 @@ class Model_User extends Model_Auth_User {
 	 * @param  post   status status of the post
 	 * @return array  Model_Post objects
 	 */
-	public function get_user_posts($page_size, $offset, $post_type = Model_Post::QUESTION, $post_status = Helper_PostStatus::ALL)
+	public function get_user_posts($page_size, $offset, $post_type = Helper_PostType::QUESTION, $post_status = Helper_PostStatus::ALL)
 	{
-		return $this->posts->where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
+		return $this->posts->where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DELETED)
 			->and_where('post_type', '=', $post_type)
 			->order_by('latest_activity', 'desc')
 			->limit($page_size)
@@ -374,14 +375,14 @@ class Model_User extends Model_Auth_User {
 		{
 			case Helper_PostStatus::ANSWERED:
 				$count = $this->posts->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-					->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
-					->and_where('post_status', '=', Helper_PostStatus::ANSWERED)
+					->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+					->and_where('answer_count', '>', 0)
 					->and_where('post_type', '=', $post_type)
 					->count_all();
 				break;
 			default:
 				$count = $this->posts->where('post_moderation', '!=', Helper_PostModeration::DELETED)
-					->and_where('post_moderation', '!=', Helper_PostModeration::IN_REVIEW)
+					->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 					->and_where('post_type', '=', $post_type)
 					->count_all();
 				break;
