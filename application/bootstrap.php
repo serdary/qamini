@@ -209,7 +209,7 @@ array(
 ));
 
 // Route setup for the post administration
-Route::set('admin_post', '<directory>(/<controller>(/<action>(/<type>(/<moderation>))))',
+Route::set('admin_post', '<directory>/post(/<action>(/<type>(/<moderation>)))',
 	array(
 		'directory' => '(admin)'
 	))

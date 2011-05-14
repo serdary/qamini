@@ -1,3 +1,21 @@
 .questions-holder .post-moderation {
 	background-color: yellow;
 }
+.settings-holder {
+}
+.settings-holder .setting-id {
+	float:left;
+	width:100px;
+}
+.settings-holder .setting-key {
+	float:left;
+	width:300px;
+}
+.settings-holder .setting-value {
+	float:left;
+	width:400px;
+}
+.settings-holder .setting-status {
+	float:left;
+	width:100px;
+}

@@ -59,7 +59,7 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 	/**
 	 * Checks posted moderation post
 	 * 
-	 * @return array
+	 * @return int
 	 */
 	private function check_moderate_post()
 	{

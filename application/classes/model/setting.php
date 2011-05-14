@@ -9,7 +9,11 @@
  * @author    Serdar Yildirim
  */
 class Model_Setting extends ORM {
-
+	
+	// Auto-update column for creation and update
+	protected $_created_column = array('column' => 'created_at', 'format' => TRUE);
+	protected $_updated_column = array('column' => 'updated_at', 'format' => TRUE);
+	
 	/**
 	 * Holds settings fetched from DB
 	 *
@@ -117,5 +121,30 @@ class Model_Setting extends ORM {
 		if (array_key_exists($key, $this->_settings))	$value = $this->_settings[$key];
 
 		return $value;
+	}
+	
+	/* CMS Methods */
+	
+	/**
+	 * Saves a new setting or update existing setting in DB 
+	 * 
+	 * @param int    setting id
+	 * @param string new key
+	 * @param string new value
+	 */
+	public static function cms_save_setting($setting_id, $new_key, $new_value)
+	{
+		if ($setting_id !== NULL)
+			$setting = ORM::factory('setting', $setting_id);
+		else
+		{
+			$setting = new Model_Setting;
+			$setting->updated_at = time();
+		}
+		
+		$setting->key = $new_key;
+		$setting->value = $new_value;
+		
+		return $setting->save() ? TRUE : FALSE;
 	}
 }

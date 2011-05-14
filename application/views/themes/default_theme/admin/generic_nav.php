@@ -20,7 +20,7 @@
 
 <span>
 	<?php echo HTML::anchor(Route::get('admin')->uri(
-		array('directory' => 'admin', 'action' => 'index', 'controller' => 'settings')), __('Settings Moderation')); 
+		array('directory' => 'admin', 'action' => 'index', 'controller' => 'setting')), __('Settings Moderation')); 
 	?>
 </span>
 
