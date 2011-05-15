@@ -246,18 +246,14 @@ class Model_Answer extends Model_Post {
 	 */
 	public function delete()
 	{
-		// Currently only logged in users can delete answers.
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access())
 			throw new Kohana_Exception('Model_Answer::delete(): Could not get current user');
 
 		$this->mark_post_anonymous();
 
 		$this->handle_reputation(Model_Reputation::ANSWER_ADD, true);
-			
-		if (($parent_post = Model_Question::get($this->parent_post_id)) === NULL)
-			return NULL;
 
-		return $parent_post;
+		return Model_Question::get($this->parent_post_id);
 	}
 	
 	/**
@@ -316,7 +312,7 @@ class Model_Answer extends Model_Post {
 	 */
 	public function accept_post()
 	{
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access($user))
 			throw new Kohana_Exception('Model_Answer::accept_post(): Could not get current user');
 			
 		if ($this->is_deleted())	return -1;

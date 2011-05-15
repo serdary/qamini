@@ -25,7 +25,7 @@
 		</div>
 		
 		<?php foreach ($settings as $ind => $setting) { ?>
-		<div class="row <?php ?>">
+		<div class="row">
 			<form class="post_setting_form" action="<?php echo URL::site(Route::get('admin')->uri(
 				array('directory' => 'admin', 'action' => 'index', 'controller' => 'setting'))) ?>" method="post">
 			

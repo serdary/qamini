@@ -7,31 +7,29 @@
 	<br /><br /><br /><br />
 		
 	<div class="post-navigation">
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		<?php 
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::NORMAL))
 			 , __('New Questions')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::DISAPPROVED))
 			 , __('Disapproved Questions')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::DELETED))
 			 , __('Deleted Questions')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::APPROVED))
 			 , __('Approved Questions')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::IN_REVIEW))
 			 , __('In Review Questions')); 
@@ -39,31 +37,28 @@
 		
 		<br /><br />
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		<?php 
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::NORMAL))
 			 , __('New Answers')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::DISAPPROVED))
 			 , __('Disapproved Answers')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::DELETED))
 			 , __('Deleted Answers')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::APPROVED))
 			 , __('Approved Answers')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::IN_REVIEW))
 			 , __('In Review Answers')); 
@@ -71,31 +66,28 @@
 		
 		<br /><br />
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		<?php 
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::NORMAL))
 			 , __('New Comments')); 
-		?>
-		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::DISAPPROVED))
 			 , __('Disapproved Comments')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::DELETED))
 			 , __('Deleted Comments')); 
-		?>
 		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::APPROVED))
 			 , __('Approved Comments')); 
-		?>
-		
-		<?php echo HTML::anchor(Route::get('admin_post')->uri(
+		 
+		echo HTML::anchor(Route::get('admin_post')->uri(
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::IN_REVIEW))
 			 , __('In Review Comments')); 
@@ -110,7 +102,7 @@
 	</div>
 
 	<?php foreach ($posts as $ind => $post) { ?>
-	<div class="row post-holder-<?php echo $post->id; ?>">
+	<div class="row row-holder-<?php echo $post->id; ?>">
 		<div class="question-details">
 			<div class="view-count">
 				<div class="number"><?php echo $post->format_stat(Helper_StatType::VIEW_COUNT); ?></div>
@@ -174,15 +166,15 @@
 				}
 				?>
 				
-				<form class="post_moderate_form" action="<?php echo URL::site(Route::get('admin_ajax')->uri(array('directory' => 'admin', 'action' => 'postmoderate'))) ?>" method="post">
-				<input type="hidden" name="hdn_post_id" class="post-id" value="<?php echo $post->id ?>" />
+				<form class="moderate_form" action="<?php echo URL::site(Route::get('admin_ajax')->uri(array('directory' => 'admin', 'action' => 'postmoderate'))) ?>" method="post">
+				<input type="hidden" name="hdn_id" value="<?php echo $post->id ?>" />
 				<input type="hidden" name="token" value="<?php echo (isset($token)) ? $token : ''; ?>" />
 				<span class="result-<?php echo $post->id; ?>"></span>
 				
 				<?php 
 				 echo __('Moderate: '), 
 				
-					'<select class="post-moderate-select-' . $post->id . '">
+					'<select class="moderate-select-' . $post->id . '">
 					<option value="' . Helper_PostModeration::APPROVED . '">' . Helper_PostModeration::APPROVED . '</option>
 					<option value="' . Helper_PostModeration::DISAPPROVED . '">' . Helper_PostModeration::DISAPPROVED . '</option>
 					<option value="' . Helper_PostModeration::DELETED . '">' . Helper_PostModeration::DELETED . '</option>
@@ -197,8 +189,6 @@
 		</div>
 	</div>
 	<?php } ?>
-
-
 	
 	<div class="pagination-holder"><?php echo $pagination; ?></div>
 </div>

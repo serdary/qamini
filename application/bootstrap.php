@@ -198,21 +198,9 @@ Route::set('homepage', '')->defaults(array(
 		'action'     => 'newest',
 ));
 
-// Route setup for the admin
-Route::set('admin', '<directory>(/<controller>(/<action>(/<id>)))',
-array(
-'directory' => '(admin)'
-))
-->defaults(array(
-'controller' => 'main',
-'action'     => 'index',
-));
-
 // Route setup for the post administration
 Route::set('admin_post', '<directory>/post(/<action>(/<type>(/<moderation>)))',
-	array(
-		'directory' => '(admin)'
-	))
+	array('directory' => '(admin)'))
 	->defaults(array(
 		'controller' => 'post',
 		'action'     => 'index',
@@ -220,11 +208,25 @@ Route::set('admin_post', '<directory>/post(/<action>(/<type>(/<moderation>)))',
 
 // Route setup for admin ajax actions
 Route::set('admin_ajax', '<directory>/ajax(/<action>(/<id>))',
-	array(
-		'directory' => '(admin)'
-	))
+	array('directory' => '(admin)'))
 	->defaults(array(
 		'controller' => 'ajax',
+		'action'     => 'index',
+	));
+
+// Route setup for the user administration
+Route::set('admin_user', '<directory>/user(/<action>(/<moderation>))',
+	array('directory' => '(admin)'))
+	->defaults(array(
+		'controller' => 'user',
+		'action'     => 'index',
+	));
+
+// Route setup for the admin
+Route::set('admin', '<directory>(/<controller>(/<action>(/<id>)))',
+	array('directory' => '(admin)'))
+	->defaults(array(
+		'controller' => 'main',
 		'action'     => 'index',
 	));
 

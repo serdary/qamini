@@ -68,7 +68,7 @@ class Model_Question extends Model_Post {
 					
 		if (!$post->loaded())
 		{
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the question by ID: ' . $id);
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, "Get::Could not fetch the question by ID: $id");
 			return NULL;
 		}
 
@@ -286,8 +286,7 @@ class Model_Question extends Model_Post {
 	 */
 	public function delete()
 	{
-		// Currently only logged in users can delete questions.
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access())
 			throw new Kohana_Exception('Model_Question::delete(): Could not get current user');
 
 		// The question marked anonymous (user_id = 0) instead of marked deleted.
@@ -622,4 +621,16 @@ class Model_Question extends Model_Post {
 			
 		return ($new_tags === '') ? $new_tags : substr($new_tags, 0, -1);
 	}
+	
+	/* CMS METHODS */
+	
+	/**
+	 * A wrapper to delete all tags of moderated (disapproved or deleted) question.
+	 */
+	public function cms_delete_all_tags()
+	{
+		$this->update_tags('');
+	}
+		
+	/* CMS METHODS */
 }

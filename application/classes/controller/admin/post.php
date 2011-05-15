@@ -27,7 +27,7 @@ class Controller_Admin_Post extends Controller_Admin_Template {
 		$type = $this->request->param('type', Helper_PostType::QUESTION);
 		$moderation = $this->request->param('moderation', Helper_PostModeration::NORMAL);
 
-		$total_posts = ORM::factory('post')->cms_count_posts($type, $moderation);
+		$total_posts = Model_Post::cms_count_posts($type, $moderation);
 		
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_posts,

@@ -23,7 +23,12 @@ return array(
 	/**
 	 * Qamini cache driver
 	 */
-	'cache_driver' => 'file',//apc
+	'cache_driver' => 'apc',// apc
+
+	/**
+	 * Qamini cache time to live
+	 */
+	'cache_ttl' => 60, //86400, // 3600 * 24 --> 1 day
 
 	/**
 	 * Pass reset link expiration time (in seconds)
@@ -48,12 +53,17 @@ return array(
 	/**
 	 * Default questions page size displayed on profile page
 	 */
-	'default_profile_questions_page_size' => 5,
+	'default_profile_questions_page_size' => 10,
 
 	/**
 	 * Default answers page size displayed on profile page
 	 */
-	'default_profile_answers_page_size' => 2,
+	'default_profile_answers_page_size' => 5,
+
+	/**
+	 * Default users page size displayed on cms pages
+	 */
+	'default_users_page_size' => 20,
 
 	/**
 	 * Default search page size
@@ -69,5 +79,10 @@ return array(
 	 * Default max meta description length
 	 */
 	'max_meta_desc_length' => 200,
+
+	/**
+	 * Default site usage. 1 => visitors cannot add questions and answers, 0 => otherwise
+	 */
+	'login_required_to_add_content' => 1,
 
 );

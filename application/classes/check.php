@@ -74,4 +74,15 @@ class Check
 	{
 		return $arr === NULL || count($arr) < 1;
 	}
+	
+	/**
+	 * Checks if variable false or null
+	 * 
+	 * @param  object
+	 * @return boolean
+	 */
+	public static function isNullOrFalse($val)
+	{
+		return $val === NULL || $val === FALSE;
+	}
 }

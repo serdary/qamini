@@ -19,3 +19,8 @@
 	float:left;
 	width:100px;
 }
+.users-holder table {
+}
+.users-holder table td{
+	padding: 5px;
+}

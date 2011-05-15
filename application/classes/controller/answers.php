@@ -25,8 +25,9 @@ class Controller_Answers extends Controller_Template_Main {
 	public function action_edit()
 	{
 		// If answer id and question id is not supplied or user is not logged in, redirect to the question list
-		if (($answer_id = $this->request->param('id', 0)) === 0 ||
-			($question_id = $this->request->param('question_id', 0)) === 0 || !$this->auth->logged_in())
+		if (($answer_id = $this->request->param('id', 0)) === 0
+			 || ($question_id = $this->request->param('question_id', 0)) === 0
+			 || $this->check_user_has_write_access() === FALSE)
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
@@ -76,8 +77,9 @@ class Controller_Answers extends Controller_Template_Main {
 	public function action_delete()
 	{
 		// If answer id or question id is not supplied or user is not logged in, redirect to the question list
-		if (($answer_id = Arr::get($_POST, 'id', 0)) === 0 ||
-			($question_id = Arr::get($_POST, 'parent_id', 0)) === 0 || !$this->auth->logged_in())
+		if (($answer_id = Arr::get($_POST, 'id', 0)) === 0 
+			|| ($question_id = Arr::get($_POST, 'parent_id', 0)) === 0 
+			|| $this->check_user_has_write_access() === FALSE)
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}

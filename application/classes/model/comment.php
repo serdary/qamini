@@ -92,8 +92,7 @@ class Model_Comment extends Model_Post {
 	 */
 	public function insert($post, $parent_id)
 	{
-		// Currently only logged in users can add comments
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access($user))
 			throw new Kohana_Exception('Model_Comment::add(): Could not get current user');
 	
 		$post['user_id'] = $user->id;
@@ -148,15 +147,14 @@ class Model_Comment extends Model_Post {
 	 */
 	public function delete()
 	{
-		// Currently only logged in users can delete comments.
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access())
 			throw new Kohana_Exception('Model_Comment::delete(): Could not get current user');
 
 		$this->latest_activity = time();
 		$this->post_moderation = Helper_PostModeration::DELETED;
 
 		if (!$this->save())
-			throw new Kohana_Exception('Model_Comment::delete(): Could not delete comment with ID: ' . $this->id);
+			throw new Kohana_Exception("Model_Comment::delete(): Could not delete comment with ID: $this->id");
 			
 		$this->handle_reputation(Model_Reputation::COMMENT_ADD, true);
 

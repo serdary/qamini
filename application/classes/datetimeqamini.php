@@ -89,7 +89,7 @@ class DateTimeQamini extends Kohana_Date
 	 */
 	private function date_diff_section_exist($section)
 	{
-		return (isset($this->_diff[$section]) && $this->_diff[$section] > 0);
+		return isset($this->_diff[$section]) && (int) $this->_diff[$section] > 0;
 	}
 	
 	/**
@@ -104,7 +104,10 @@ class DateTimeQamini extends Kohana_Date
 		$section1 = $time_lbl1 . 's';
 		$section2 = $time_lbl2 . 's';
 		
-		if (!$this->date_diff_section_exist($section2))		
+		if (!$this->date_diff_section_exist($section1))		
+			return sprintf($this->_template1, $this->_diff[$section2], Inflector::plural($time_lbl2, $this->_diff[$section2]));
+			
+		else if (!$this->date_diff_section_exist($section2))		
 			return sprintf($this->_template1, $this->_diff[$section1], Inflector::plural($time_lbl1, $this->_diff[$section1]));
 			
 		return sprintf($this->_template2, $this->_diff[$section2], Inflector::plural($time_lbl2, $this->_diff[$section2])

@@ -58,9 +58,14 @@ class Model_Setting extends ORM {
 			return;
 		}
 
-		// Set cache for 24 hours
-		if ($this->_settings)
-			$cache->set('settings', $this->_settings, 3600 * 24);
+		// Set cache
+		try {
+			if ($this->_settings)
+				$cache->set('settings', $this->_settings, (int) Kohana::config('config.cache_ttl'));	
+		}
+		catch (Exception $ex) {
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Setting::load_settings, ex: ' . $ex->getMessage());
+		}
 	}
 	
 	/**

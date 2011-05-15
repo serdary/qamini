@@ -88,7 +88,7 @@ class Controller_Questions extends Controller_Template_Main {
 	 * @uses Model_Question::check_question_title()
 	 */
 	public function action_ask()
-	{
+	{		
 		$notify_user = FALSE;
 
 		$question = new Model_Question;
@@ -103,6 +103,11 @@ class Controller_Questions extends Controller_Template_Main {
 
 		// If form is not submitted, show the add question form
 		if (!$post = $_POST)	return;
+		
+		if (! $this->check_user_has_write_access(FALSE))
+		{
+			$this->request->redirect(Route::get('question')->uri());
+		}
 
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
@@ -138,7 +143,8 @@ class Controller_Questions extends Controller_Template_Main {
 	public function action_edit()
 	{
 		// If question id is not supplied or user is not logged in, redirect to the question list
-		if (($question_id = $this->request->param('id', 0)) === 0 || !$this->auth->logged_in())
+		if (($question_id = $this->request->param('id', 0)) === 0 
+			|| $this->check_user_has_write_access() === FALSE)
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
@@ -193,7 +199,7 @@ class Controller_Questions extends Controller_Template_Main {
 	public function action_delete()
 	{
 		// If question id is not supplied or user is not logged in, redirect to the question list
-		if (($question_id = Arr::get($_POST, 'id', 0)) === 0 || !$this->auth->logged_in())
+		if (($question_id = Arr::get($_POST, 'id', 0)) === 0 || $this->check_user_has_write_access() === FALSE)
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
@@ -350,7 +356,13 @@ class Controller_Questions extends Controller_Template_Main {
 	 * @return array
 	 */
 	private function add_new_answer($post, &$answer, $question)
-	{			
+	{
+		if (! $this->check_user_has_write_access(FALSE))
+		{
+			$this->request->redirect(Route::get('question')->uri(
+				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
+		}
+		
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 

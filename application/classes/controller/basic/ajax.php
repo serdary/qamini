@@ -80,13 +80,32 @@ abstract class Controller_Basic_Ajax extends Controller {
 	 */
 	protected function check_login()
 	{
-		if (!$this->auth || !$this->auth->logged_in())
+		if (!$this->check_user_has_write_access())
 		{
 			$this->prepare_error_response(__('Please login.'));
 			return FALSE;
 		}
 		
 		return TRUE;
+	}
+	
+	/**
+	 * Checks if the current user has right for write access
+	 * 
+	 * @return boolean
+	 */
+	protected function check_user_has_write_access($force_login = TRUE)
+	{
+		$login_required = (int) Model_Setting::instance()->get('login_required_to_add_content');
+		
+		if ($force_login || $login_required === 1)
+			return $this->auth->logged_in() && $this->user->valid_user();
+		
+		// If login is not required, but a spammer is already logged in, dont allow
+		// This is not so right in the websites which allows anonymous questions and answers
+		if ($login_required === 0 && !$this->auth->logged_in())	return TRUE;
+		
+		return $this->user->valid_user();
 	}
 
 	/**

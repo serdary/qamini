@@ -452,7 +452,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	
         if ($post->user_id != 0)
     	{
-    		if (!($owner_user = ORM::factory('user')->get_user_by_id($post->user_id)))
+    		if (($owner_user = Model_User::get($post->user_id)) === NULL)
 			{
 				$this->assertEquals('voteQuestion', 'Owner user couldnt be fetched. ID:' . $post->user_id);	// Raise error
 				return;
@@ -480,7 +480,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	
         if ($post->user_id != 0)
         {
-        	$owner_user = ORM::factory('user')->get_user_by_id($post->user_id);
+        	$owner_user = Model_User::get($post->user_id);
         	
 			$this->assertSame((int) $owner_user->reputation, $old_rep_owner + $reputation_value_owner);
         }
@@ -521,7 +521,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	
         if ($post->user_id != 0)
     	{
-    		if (!($owner_user = ORM::factory('user')->get_user_by_id($post->user_id)))
+    		if (($owner_user = Model_User::get($post->user_id)) === NULL)
 			{
 				$this->assertEquals('voteAnswer', 'Owner user couldnt be fetched.');	// Raise error
 				return;
@@ -548,7 +548,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     		
         if ($post->user_id != 0)
         {
-        	$owner_user = ORM::factory('user')->get_user_by_id($post->user_id);
+        	$owner_user = Model_User::get($post->user_id);
         	
 			$this->assertSame($owner_user->reputation, $old_rep_owner + $reputation_value_owner);
         }
@@ -580,7 +580,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	    	
         if ($post->user_id != 0)
     	{
-    		if (!($owner_user = ORM::factory('user')->get_user_by_id($post->user_id)))
+    		if (($owner_user = Model_User::get($post->user_id)) === NULL)
 			{
 				$this->assertEquals('acceptAnswer', 'Owner user couldnt be fetched.');	// Raise error
 				return;
@@ -610,7 +610,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     	
         if ($post->user_id != 0)
         {
-        	$owner_user = ORM::factory('user')->get_user_by_id($post->user_id);
+        	$owner_user = Model_User::get($post->user_id);
         	
     		$this->assertSame($owner_user->reputation, $old_rep_owner + $reputation_value_owner);
         }

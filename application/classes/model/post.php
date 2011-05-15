@@ -99,7 +99,7 @@
 	{
 		if ($obj->loaded())	return TRUE;
 		
-		Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Get::Could not fetch the post by ID: ' . $id);
+		Kohana_Log::instance()->add(Kohana_Log::ERROR, "Get::Could not fetch the post by ID: $id");
 		return FALSE;
 	}
 
@@ -290,8 +290,8 @@
 	 */
 	public function handle_submitted_post_data(&$post)
 	{
-		if (Auth::instance()->get_user() !== NULL)	$this->handle_submitted_data_for_user($post);
-		else	$this->handle_submitted_data_for_guest($post);
+		if (! Model_User::check_user_has_write_access()) 	$this->handle_submitted_data_for_guest($post);	
+		else	$this->handle_submitted_data_for_user($post);
 	}
 	
 	/**
@@ -397,7 +397,7 @@
 		if (!$this->save())
 		{
 			if ($this !== NULL && $this->id > 0)
-				throw new Kohana_Exception('Model_Post::save_post(): Could not save the post with ID: ' . $this->id);
+				throw new Kohana_Exception("Model_Post::save_post(): Could not save the post with ID: {$this->id}");
 			else
 				throw new Kohana_Exception('Model_Post::save_post(): Could not save the post');
 		}
@@ -405,21 +405,20 @@
 	
  	/**
 	 * Marks a post as anonymous.
-	 * Used when a user decided to delete a question or an answer
+	 * Used when a user decided to delete a post
 	 *
 	 * @throws Kohana_Exception, ORM_Validation_Exception
 	 */
-	protected function mark_post_anonymous()
+	public function mark_post_anonymous()
 	{
 		$this->latest_activity = time();
 		$this->marked_anonymous = 1;
 		$this->user_id = 0;
-		$this->created_by = Helper_PostStatus::MARKED_ANONYMOUS;
+		$this->created_by = 'anonymous';
 		$this->notify_email = '0';
 
 		if (!$this->save())
-			throw new Kohana_Exception('Model_Post::mark_post_anonymous(): Could not delete '
-				. $this->post_type . ' with ID: ' . $this->id);
+			throw new Kohana_Exception("Model_Post::mark_post_anonymous(): Could not delete {$this->post_type} , ID: {$this->id}");
 	}
 
 	/**
@@ -431,7 +430,8 @@
 	 */
 	protected function handle_reputation($reputation_type, $subtract = FALSE)
 	{
-		if (($user = Auth::instance()->get_user()) === NULL)
+		$user = Auth::instance()->get_user();
+		if (Check::isNullOrFalse($user))
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): Could not get current user.');
 			return;
@@ -483,7 +483,7 @@
 					if ($this->user_id < 1)
 						break;
 
-					if (!($owner_user = ORM::factory('user')->get_user_by_id($this->user_id)))
+					if (($owner_user = Model_User::get($this->user_id)) === NULL)
 					{
 						Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): ' .
 				 			'Owner user (userid: ' . $this->user_id . ') could not be loaded to change reputation.');
@@ -516,7 +516,7 @@
 	 */
 	protected function check_user_previous_votes($vote_type, $reputation_type_up, $reputation_type_down)
 	{
-		if (($user = Auth::instance()->get_user()) === NULL)
+		if (! Model_User::check_user_has_write_access($user))
 			throw new Kohana_Exception('Model_Post::check_user_previous_votes(): Could not get current user');
 
 		$previous_vote_up = ORM::factory('reputation')->get_user_reputation_for_post($user->id,
@@ -564,9 +564,9 @@
 	/**
 	 * Checks if the same vote has already been voted by the same user
 	 * 
-	 * @param  int vote_type
-	 * @param  Model_Reputation object
-	 * @param  Model_Reputation object
+	 * @param  int    vote_type
+	 * @param  object Model_Reputation instance
+	 * @param  object Model_Reputation instance
 	 * @return boolean
 	 */
 	private function same_post_already_voted($vote_type, $previous_vote_up, $previous_vote_down)
@@ -713,7 +713,7 @@
 	 */
 	private function get_parent_post_owner()
 	{
-		if (!($owner_user = ORM::factory('user')->get_user_by_id($this->user_id)))
+		if (($owner_user = Model_User::get($this->user_id)) === NULL)
 		{
 			Kohana_Log::instance()->add(Kohana_Log::ERROR
 			, 'Model_Post::get_parent_post_owner(): Could not get parent post user. ID: ' 
@@ -743,7 +743,8 @@
 	 */
 	protected function user_can_modify(&$user)
 	{
-		if (($user = Auth::instance()->get_user()) === NULL) return FALSE;
+		if (! Model_User::check_user_has_write_access($user))
+			return FALSE;
 		
 		return ($this->user_id === $user->id || 
 			$user->has('roles', ORM::factory('role', array('name' => 'admin'))));
@@ -779,9 +780,9 @@
 	 * @param  string post moderation type
 	 * @return int
 	 */
-	public function cms_count_posts($post_type, $moderation_type)
+	public static function cms_count_posts($post_type, $moderation_type)
 	{
-		return $this->where('post_moderation', '=', $moderation_type)
+		return ORM::factory('post')->where('post_moderation', '=', $moderation_type)
 			->and_where('post_type', '=', $post_type)->count_all();
 	}
 		
@@ -805,7 +806,7 @@
 	/**
 	 * Moderates a post
 	 * 
-	 * @param string moderation type
+	 * @param  string moderation type
 	 * @return int
 	 */
 	public function cms_moderate($moderation_type)
@@ -820,7 +821,9 @@
 		try {
 			if ($this->save())
 			{
-				$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type);
+				$this->delete_tags_if_question($moderation_type);
+				
+				$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type, TRUE);
 				return 1;
 			}
 			else	return 0;
@@ -833,7 +836,7 @@
 	/**
 	 * Checks if posted moderation type value is valid
 	 * 
-	 * @param string moderation type
+	 * @param  string moderation type
 	 * @return boolean
 	 */
 	private function cms_valid_moderation($moderation_type)
@@ -846,17 +849,32 @@
 	}
 	
 	/**
+	 * If post type is question, then delete all tags of the question
+	 * 
+	 * @param string moderation type
+	 */
+	public function delete_tags_if_question($moderation_type)
+	{
+		if ($this->post_type !== Helper_PostType::QUESTION 
+			|| ($moderation_type !== Helper_PostModeration::DELETED
+				&& $moderation_type !== Helper_PostModeration::DISAPPROVED))	return;
+				
+		$question = Model_Question::get($this->id, FALSE);
+		$question->cms_delete_all_tags();
+	}
+	
+	/**
 	 * After a post has been marked, user's reputation, parent post's (if any) question/answer count
 	 * and user's question/answer count etc. should be changed 
 	 * 
 	 * @param string post's old moderation type
 	 * @param string post's new moderation type
 	 */
-	private function cms_process_post_moderation_effects($old_moderation_type, $new_moderation_type)
+	public function cms_process_post_moderation_effects($old_moderation_type, $new_moderation_type, $update_parent_stats)
 	{
 		if ($new_moderation_type === Helper_PostModeration::IN_REVIEW 
 			|| $this->user_id === NULL || $this->user_id < 1
-			|| ($user = ORM::factory('user')->get_user_by_id($this->user_id)) === NULL
+			|| ($user = Model_User::get($this->user_id)) === NULL
 			)
 			return;
 			
@@ -884,7 +902,8 @@
 				
 				$this->handle_user_reputation($user, $reputation_type, FALSE);
 				
-				$this->update_parent_stats($this->post_type, TRUE);
+				if ($this->post_type !== Helper_PostType::QUESTION)
+					$this->update_parent_stats($this->post_type, TRUE);
 				break;
 
 			case Helper_PostModeration::DELETED:
@@ -896,7 +915,8 @@
 					
 				$this->handle_user_reputation($user, $reputation_type, TRUE);
 		
-				$this->update_parent_stats($this->post_type, FALSE);
+				if ($this->post_type !== Helper_PostType::QUESTION)
+					$this->update_parent_stats($this->post_type, FALSE);
 				break;
 		}
 	}

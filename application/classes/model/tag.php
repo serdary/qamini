@@ -79,7 +79,9 @@ class Model_Tag extends ORM {
 	 */
 	public function count_tag_questions()
 	{
-		return $this->posts->count_all();
+		return $this->posts->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->count_all();
 	}
 
 	/**
@@ -91,7 +93,10 @@ class Model_Tag extends ORM {
 	 */
 	public function get_tag_questions($page_size, $offset)
 	{
-		return $this->posts->limit($page_size)->offset($offset)->find_all();
+		return $this->posts->where('post_moderation', '!=', Helper_PostModeration::DELETED)
+			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
+			->order_by('updated_at', 'DESC')
+			->limit($page_size)->offset($offset)->find_all();
 	}
 	
 	/**

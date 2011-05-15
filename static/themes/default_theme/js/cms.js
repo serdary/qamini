@@ -1,41 +1,61 @@
 var CMS = function() {
 	
 	var priv = {
-			moderatePostSuccess: function(data, postId) {
+			moderateSuccess: function(data, id) {
 				if (data.error !== undefined)
-					$('.result-' + postId).text(data.message).addClass('error-div').show();
+					$('.result-' + id).text(data.message).addClass('error-div').show();
 				else
 				{
-					$('.result-' + postId).text(data.message).addClass('success-div').show();
-					$('.post-holder-' + postId).hide(1500);
+					$('.result-' + id).text(data.message).addClass('success-div').show();
+					$('.row-holder-' + id).hide(1500);
 				}
 			},
 			
-			moderatePostError: function(data, postId) {
-				$('.result-' + postId).text(data.message).addClass('error-div').fadeIn(700);
+			moderateError: function(data, id) {
+				$('.result-' + id).text(data.message).addClass('error-div').fadeIn(700);
+			},
+
+			moderateSpamSuccess: function(data, id) {
+				if (data.error !== undefined)
+					$('.spam-result-' + id).text(data.message).addClass('error-div').show();
+				else
+				{
+					$('.spam-result-' + id).text(data.message).addClass('success-div').show();
+				}
+			},
+			
+			moderateSpamError: function(data, id) {
+				$('.spam-result-' + id).text(data.message).addClass('error-div').fadeIn(700);
 			}
 	};
 	
 	return {
-		ModeratePostSuccess: function(data, postId) {
-			priv.moderatePostSuccess(data, postId);
+		ModerateSuccess: function(data, id) {
+			priv.moderateSuccess(data, id);
 		},
 		
-		ModeratePostError: function(data, postId) {
-			priv.moderatePostError(data, postId);
+		ModerateError: function(data, id) {
+			priv.moderateError(data, id);
+		},
+		
+		ModerateSpamSuccess: function(data, id) {
+			priv.moderateSpamSuccess(data, id);
+		},
+		
+		ModerateSpamError: function(data, id) {
+			priv.moderateSpamError(data, id);
 		}
 	}
 } ();
 
-$(document).ready(function() {	
-	
-	$(".post_moderate_form").submit(function(e) {
+$(document).ready(function() {
+	$(".moderate_form").submit(function(e) {
 		form = this;
 		e.preventDefault();
-		var postId = $(this.hdn_post_id).val();
-		var moderationVal = $('.post-moderate-select-' + postId).val();
+		var id = $(this.hdn_id).val();
+		var moderationVal = $('.moderate-select-' + id).val();
 
-		$('.result-' + postId).text('');
+		$('.result-' + id).text('');
 		
 		$.ajax({
 			type: "POST",
@@ -43,8 +63,41 @@ $(document).ready(function() {
 			data: $(this).serialize() + "&moderationVal=" + moderationVal,
 			dataType: "json",
 
-			success: function(data) { CMS.ModeratePostSuccess(data, postId) },
-			error: function(data) { CMS.ModeratePostError(data, postId) },
+			success: function(data) { CMS.ModerateSuccess(data, id) },
+			error: function(data) { CMS.ModerateError(data, id) },
+		});
+		
+		return false;         
+	});
+	
+	$('.user-moderate-select').change(function() {
+		var id = this.id;
+		var moderationVal = $('.moderate-select-' + id).val();
+		
+		if (moderationVal == 'spam')
+		{
+			$('.spam-management-' + id).show();
+		}
+		else $('.spam-management-' + id).hide();
+	});
+
+	$(".spam_moderate_form").submit(function(e) {
+		form = this;
+		e.preventDefault();
+		var id = $(this.hdn_id).val();
+		var delete_all_posts = $(this.input_delete_all_posts).is(':checked');
+		var mark_anonymous = $(this.input_mark_anonymous_all_posts).is(':checked');
+		
+		$('.spam-result-' + id).text('');
+		
+		$.ajax({
+			type: "POST",
+			url: this.action,
+			data: $(this).serialize() + "&delete_all_posts=" + delete_all_posts + "&mark_anonymous=" + mark_anonymous,
+			dataType: "json",
+
+			success: function(data) { CMS.ModerateSpamSuccess(data, id) },
+			error: function(data) { CMS.ModerateSpamError(data, id) },
 		});
 		
 		return false;         

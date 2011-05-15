@@ -69,9 +69,22 @@ class Model_User extends Model_Auth_User {
 	 * @param  int    user id
 	 * @return object
 	 */
-	public function get_user_by_id($id)
+	public static function get($id)
 	{
-		$user = $this->where('id', '=', $id)->find();
+		$user = ORM::factory('user')->where('id', '=', $id)->find();
+
+		return ($user->loaded() === TRUE) ? $user : NULL;
+	}
+
+	/**
+	 * Returns user by username
+	 *
+	 * @param $username The username of the user
+	 * @return mixed
+	 */
+	public static function get_user_by_username($username)
+	{
+		$user = ORM::factory('user')->where('username', '=', $username)->find();
 
 		return ($user->loaded() === TRUE) ? $user : NULL;
 	}
@@ -93,7 +106,8 @@ class Model_User extends Model_Auth_User {
 		$this->where('username', '=', $data['username'])->find();
 
 		// Try to log user in
-		if ($this->loaded() AND Auth::instance()->login($this, $data['password'], $remember))
+		if ($this->loaded() AND $this->valid_user()
+		 AND Auth::instance()->login($this, $data['password'], $remember))
 			return TRUE;
 
 		return FALSE;
@@ -318,11 +332,11 @@ class Model_User extends Model_Auth_User {
 	 * Validates user's old password
 	 *
 	 * @param  string  field name
-	 * @return false on failure
+	 * @return boolean false on failure
 	 */
 	public function check_password($old_password)
 	{
-		if (($user = Auth::instance()->get_user()) && 
+		if (!Check::isNullOrFalse($user) && 
 			Auth::instance()->password($user->username) === Auth::instance()->hash($old_password))
 		{
 			return;
@@ -420,17 +434,146 @@ class Model_User extends Model_Auth_User {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR
 				, 'Model_User::update_last_activity_time(): Could not update current user. ID: ' . $this->id);
 	}
+		
+	/**
+	 * Returns the relative latest activity of the user
+	 * 
+	 * @return string
+	 */
+	public function get_user_latest_activity()
+	{
+		$latest_act_obj = new DateTimeQamini($this->latest_activity);
+		
+		return $latest_act_obj->get_relative_diff(time());
+	}
+		
+	/**
+	 * Returns the relative last login of the user
+	 * 
+	 * @return string
+	 */
+	public function get_user_last_login()
+	{
+		$last_login_obj = new DateTimeQamini($this->last_login);
+		
+		return $last_login_obj->get_relative_diff(time());
+	}
+	
+	/**
+	 * Checks if the user is not spam or deleted
+	 * 
+	 * @return boolean
+	 */
+	public function valid_user()
+	{
+		return $this->account_status !== Helper_AccountStatus::DELETED
+			&& $this->account_status !== Helper_AccountStatus::DISAPPROVED
+			&& $this->account_status !== Helper_AccountStatus::SPAM;
+	}
+	
+	/**
+	 * Checks if the current user has right for write access
+	 * 
+	 * @return boolean
+	 */
+	public static function check_user_has_write_access(& $user = NULL, $force_login = TRUE)
+	{
+		$login_required = (int) Model_Setting::instance()->get('login_required_to_add_content');
+		
+		if ($user === NULL)	$user = new Model_User;
+		$user = Auth::instance()->get_user();
+		
+		if ($force_login || $login_required === 1)
+			return (! Check::isNullOrFalse($user)) && $user->valid_user();
+		
+		// If login is not required, but a spammer is already logged in, dont allow
+		// This is not so right in the websites which allows anonymous questions and answers
+		if ($login_required === 0 && (! Check::isNullOrFalse($user)))	return TRUE;
+		
+		return $user->valid_user();
+	}
+	
+	/* CMS Methods */
+	
+	/**
+	 * Used to get users for cms pages
+	 * 
+	 * @param  int    page size
+	 * @param  int    offset
+	 * @param  string account status
+	 * @return array  Model_User objects
+	 */
+	public static function cms_get_users($page_size, $offset, $account_status)
+	{
+		return ORM::factory('user')
+			->where('account_status', '=', $account_status)
+			->limit($page_size)->offset($offset)
+			->order_by('latest_activity', 'desc')->find_all();
+	}
+	
+	/**
+	 * Moderates a user
+	 * 
+	 * @param  string account status
+	 * @return int
+	 */
+	public function cms_moderate($account_status)
+	{
+		if (!$this->cms_valid_moderation($account_status))	return -1;
+		
+		if ($this->account_status === $account_status)	return 1;
+		
+		$this->account_status = $account_status;
+		
+		try {
+			if ($this->save())
+			{
+				//$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type);
+				return 1;
+			}
+			else	return 0;
+		}
+		catch (Exception $ex) {
+			throw new Kohana_Exception('Model_User::cms_moderate(): ' . $ex->getMessage());
+		}
+	}
 
 	/**
-	 * Returns user by username
-	 *
-	 * @param $username The username of the user
-	 * @return mixed
+	 * Checks if posted account status value is valid
+	 * 
+	 * @param  string account status
+	 * @return boolean
 	 */
-	public static function get_user_by_username($username)
+	private function cms_valid_moderation($account_status)
 	{
-		$user = ORM::factory('user')->where('username', '=', $username)->find();
-
-		return ($user->loaded() === TRUE) ? $user : NULL;
+		return $account_status === Helper_AccountStatus::APPROVED 
+			|| $account_status === Helper_AccountStatus::DISAPPROVED
+			|| $account_status === Helper_AccountStatus::DELETED
+			|| $account_status === Helper_AccountStatus::IN_REVIEW
+			|| $account_status === Helper_AccountStatus::NORMAL
+			|| $account_status === Helper_AccountStatus::SPAM;
 	}
+	
+	/**
+	 * Returns user's posts for CMS pages
+	 *
+	 * @return array Model_Post objects
+	 */
+	public function cms_get_user_posts()
+	{
+		return $this->posts->find_all();
+	}
+	
+	/**
+	 * Returns total count of the users for cms pages
+	 *
+	 * @param  string account status
+	 * @return int
+	 */
+	public static function cms_count_users($account_status)
+	{
+		return ORM::factory('user')->where('account_status', '=', $account_status)->count_all();
+	}
+	
+	/* CMS METHODS */
 }
