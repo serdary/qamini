@@ -37,5 +37,5 @@ return array(
 	/**
 	 * Default site usage. 1 => visitors cannot add questions and answers, 0 => otherwise
 	 */
-	'login_required_to_add_content' => 1,
+	'login_required_to_add_content' => 0,
 );
