@@ -130,26 +130,5 @@ class Model_Setting extends ORM {
 	
 	/* CMS Methods */
 	
-	/**
-	 * Saves a new setting or update existing setting in DB 
-	 * 
-	 * @param int    setting id
-	 * @param string new key
-	 * @param string new value
-	 */
-	public static function cms_save_setting($setting_id, $new_key, $new_value)
-	{
-		if ($setting_id !== NULL)
-			$setting = ORM::factory('setting', $setting_id);
-		else
-		{
-			$setting = new Model_Setting;
-			$setting->updated_at = time();
-		}
-		
-		$setting->key = $new_key;
-		$setting->value = $new_value;
-		
-		return $setting->save() ? TRUE : FALSE;
-	}
+	/* CMS Methods */
 }

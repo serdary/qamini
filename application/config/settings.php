@@ -33,4 +33,9 @@ return array(
 	'own_answer_vote_down' => -2,
 	'accepted_answer' => 4,
 	'own_accepted_answer' => 12,
+
+	/**
+	 * Default site usage. 1 => visitors cannot add questions and answers, 0 => otherwise
+	 */
+	'login_required_to_add_content' => 1,
 );

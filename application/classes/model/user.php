@@ -526,11 +526,7 @@ class Model_User extends Model_Auth_User {
 		$this->account_status = $account_status;
 		
 		try {
-			if ($this->save())
-			{
-				//$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type);
-				return 1;
-			}
+			if ($this->save())	return 1;
 			else	return 0;
 		}
 		catch (Exception $ex) {

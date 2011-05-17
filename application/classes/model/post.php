@@ -878,6 +878,9 @@
 			)
 			return;
 			
+		if ($update_parent_stats) 
+			$update_parent_stats = ($this->post_type !== Helper_PostType::QUESTION);
+			
 		switch ($this->post_type)
 		{
 			case Helper_PostType::QUESTION:
@@ -902,7 +905,7 @@
 				
 				$this->handle_user_reputation($user, $reputation_type, FALSE);
 				
-				if ($this->post_type !== Helper_PostType::QUESTION)
+				if ($update_parent_stats)
 					$this->update_parent_stats($this->post_type, TRUE);
 				break;
 
@@ -915,7 +918,7 @@
 					
 				$this->handle_user_reputation($user, $reputation_type, TRUE);
 		
-				if ($this->post_type !== Helper_PostType::QUESTION)
+				if ($update_parent_stats)
 					$this->update_parent_stats($this->post_type, FALSE);
 				break;
 		}

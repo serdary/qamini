@@ -43,7 +43,19 @@ class Controller_Admin_Setting extends Controller_Admin_Template {
 		}
 		
 		if ($valid)
-			Model_Setting::cms_save_setting($setting_id, $new_key, $new_value);
+		{
+			if ($setting_id !== NULL)
+				$setting_obj = ORM::factory('setting', $setting_id);
+			else
+			{
+				$setting_obj = new Model_Setting;
+				$setting_obj->updated_at = time();
+			}
+			
+			$setting_obj->key = $new_key;
+			$setting_obj->value = $new_value;
+			$setting_obj->save();	
+		}
 		
 		$this->request->redirect(Route::get('admin')->uri(
 				array('directory' => 'admin', 'action' => 'index', 'controller' => 'setting')));
@@ -63,7 +75,8 @@ class Controller_Admin_Setting extends Controller_Admin_Template {
 			return FALSE;
 
 		if (Check::isStringEmptyOrNull($_POST['input_setting_key']) 
-			|| Check::isStringEmptyOrNull($_POST['input_setting_value']))
+			|| Check::isStringEmptyOrNull($_POST['input_setting_value'])
+			)
 		 	return FALSE;
 
 		return TRUE;

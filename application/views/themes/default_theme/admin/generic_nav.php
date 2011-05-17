@@ -35,9 +35,3 @@
 		array('directory' => 'admin', 'action' => 'index', 'controller' => 'tag')), __('Tag Moderation')); 
 	?>
 </span>
-
-<span>
-	<?php echo HTML::anchor(Route::get('admin')->uri(
-		array('directory' => 'admin', 'action' => 'index', 'controller' => 'vote')), __('Vote Moderation')); 
-	?>
-</span>
