@@ -4,7 +4,7 @@ Qamini - Open Source Mini Question & Answer Software
 Author: Serdar Yildirim // me[dot]serdaryildirim[dot]com
 Website: www.qamini.com
 Demo Website: www.qamini.com/qa
-Current version: 0.3
+Current version: 0.4
 
 
 Qamini Description
@@ -28,6 +28,7 @@ Current features
 * Get reputation points
 * Tags
 * Internationalization Support
+* Content Management System for Posts, Users, Settings, Tags, Spam Management and more..
 
 
 Installation
