@@ -3,94 +3,25 @@
 <div class="admin-holder questions-holder">
 
 	<?php echo View::factory($theme_dir . 'admin/generic_nav')->render(); ?>
-
-	<br /><br /><br /><br />
 		
-	<div class="post-navigation">
+	<div class="cms-sub-navigation">
 		<?php 
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::NORMAL))
-			 , __('New Questions')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::DISAPPROVED))
-			 , __('Disapproved Questions')); 
-		
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::DELETED))
-			 , __('Deleted Questions')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::APPROVED))
-			 , __('Approved Questions')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::QUESTION, 'moderation' => Helper_PostModeration::IN_REVIEW))
-			 , __('In Review Questions')); 
+		foreach(Helper_View::get_cms_question_url_list() as $link)
+			echo $link;
 		?>
 		
 		<br /><br />
 		
 		<?php 
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::NORMAL))
-			 , __('New Answers')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::DISAPPROVED))
-			 , __('Disapproved Answers')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::DELETED))
-			 , __('Deleted Answers')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::APPROVED))
-			 , __('Approved Answers')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::ANSWER, 'moderation' => Helper_PostModeration::IN_REVIEW))
-			 , __('In Review Answers')); 
+		foreach(Helper_View::get_cms_answer_url_list() as $link)
+			echo $link;
 		?>
 		
 		<br /><br />
 		
 		<?php 
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::NORMAL))
-			 , __('New Comments')); 
-
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::DISAPPROVED))
-			 , __('Disapproved Comments')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::DELETED))
-			 , __('Deleted Comments')); 
-		
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::APPROVED))
-			 , __('Approved Comments')); 
-		 
-		echo HTML::anchor(Route::get('admin_post')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
-			, 'type' => Helper_PostType::COMMENT, 'moderation' => Helper_PostModeration::IN_REVIEW))
-			 , __('In Review Comments')); 
+		foreach(Helper_View::get_cms_comment_url_list() as $link)
+			echo $link;
 		?>
 		
 	</div>
@@ -130,20 +61,7 @@
 			?>
 			</div>
 			<div class="content"><?php echo $post->content_excerpt(); ?></div>
-			
-			<?php
-				$tags_html = '';
-				foreach ($post->get_tags() as $tag)
-				{
-					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value));
-				}
-				
-				if ($tags_html !== '')
-				{
-					echo '<div class="tags"><span>', __('Tags:') , ' </span>', $tags_html, '</div>';
-				}
-			?>
-			
+					
 			<div class="post-time">
 				<?php echo '<span>', __('created: '), '</span>'
 				           , $post->get_relative_creation_time(); ?>

@@ -63,8 +63,9 @@ class Model_Question extends Model_Post {
 	 */
 	public static function get($id, $only_moderated = TRUE)
 	{
-		if ($only_moderated)	$post = self::get_moderated_question($id);
-		else $post = self::get_question_for_cms($id);
+		$post = $only_moderated
+			? self::get_moderated_question($id)
+			: self::get_question_for_cms($id);
 					
 		if (!$post->loaded())
 		{
@@ -101,7 +102,7 @@ class Model_Question extends Model_Post {
 	{
 		return ORM::factory('question')
 			->where('id', '=', $id)
-			->and_where('post_type','=' , Helper_PostType::QUESTION)->find();
+			->and_where('post_type', '=' , Helper_PostType::QUESTION)->find();
 	}
 	
   	/**

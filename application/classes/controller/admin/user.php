@@ -35,24 +35,4 @@ class Controller_Admin_User extends Controller_Admin_Template {
 			
 		$users = Model_User::cms_get_users($pagination->items_per_page, $pagination->offset, $status);
 	}
-
-	/***** PRIVATE METHODS *****/
-
-	/**
-	 * Checks posted setting values
-	 * 
-	 * @return boolean
-	 */
-	private function check_setting_values()
-	{
-		if (!$_POST || !isset($_POST['input_setting_key']) || !isset($_POST['input_setting_value']) 
-		 || ((int) $_POST['hdn_new_setting'] != 1 && !is_numeric($_POST['hdn_setting_id'])))
-			return FALSE;
-
-		if (Check::isStringEmptyOrNull($_POST['input_setting_key']) 
-			|| Check::isStringEmptyOrNull($_POST['input_setting_value']))
-		 	return FALSE;
-
-		return TRUE;
-	}
 }

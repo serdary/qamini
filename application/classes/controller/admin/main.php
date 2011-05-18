@@ -20,6 +20,4 @@ class Controller_Admin_Main extends Controller_Admin_Template {
     	$this->template->content = View::factory($this->get_theme_directory() . 'admin/main/index')
     		->set('theme_dir', $this->get_theme_directory());
 	}
-
-	/***** PRIVATE METHODS *****/
 }

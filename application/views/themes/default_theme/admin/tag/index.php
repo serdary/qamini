@@ -4,8 +4,6 @@
 
 	<?php echo View::factory($theme_dir . 'admin/generic_nav')->render(); ?>
 
-	<br /><br /><br /><br />
-
 	<div class="tags-count">
 		<?php echo $total_tags, ' ', ucfirst(Inflector::plural('tag', $total_tags)); ?>
 	</div>

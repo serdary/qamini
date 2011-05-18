@@ -3,8 +3,6 @@
 <div class="admin-holder questions-holder">
 
 	<?php echo View::factory($theme_dir . 'admin/generic_nav')->render(); ?>
-
-	<br /><br /><br /><br />
 		
 	<div class="settings-holder">
 		

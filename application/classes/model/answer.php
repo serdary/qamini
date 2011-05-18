@@ -46,8 +46,9 @@ class Model_Answer extends Model_Post {
 	 */
 	public static function get($id, $only_moderated = TRUE)
 	{
-		if ($only_moderated)	$post = self::get_moderated_answer($id);
-		else $post = self::get_answer_for_cms($id);
+		$post = $only_moderated 
+			? self::get_moderated_answer($id)
+			: self::get_answer_for_cms($id);
 		
 		if (!$post->loaded())
 		{
@@ -154,7 +155,7 @@ class Model_Answer extends Model_Post {
 	 */
 	public function is_accepted()
 	{
-		return $this->accepted === 1;
+		return $this->accepted == 1;
 	}
 
 	/**
@@ -369,7 +370,7 @@ class Model_Answer extends Model_Post {
 	{
 		$count = $this->where('post_moderation', '!=', Helper_PostModeration::DELETED)
 			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
-			->and_where('parent_post_id','=' , $this->parent_post_id)
+			->and_where('parent_post_id', '=' , $this->parent_post_id)
 			->and_where(Helper_PostStatus::ACCEPTED, '=' , 1)
 			->count_all();
 

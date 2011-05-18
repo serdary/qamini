@@ -37,6 +37,4 @@ class Controller_Admin_Post extends Controller_Admin_Template {
 		$posts = Model_Question::cms_get_posts($pagination->items_per_page
 			, $pagination->offset, $type, $moderation);
 	}
-
-	/***** PRIVATE METHODS *****/
 }

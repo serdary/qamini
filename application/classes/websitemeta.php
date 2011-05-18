@@ -4,7 +4,6 @@
  * Qamini Website Meta Class
  *
  * @package   qamini
- * @uses      Extends Kohana_Date
  * @since     0.3.0
  * @author    Serdar Yildirim
  */

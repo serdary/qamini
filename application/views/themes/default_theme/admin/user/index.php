@@ -4,32 +4,10 @@
 
 	<?php echo View::factory($theme_dir . 'admin/generic_nav')->render(); ?>
 
-	<br /><br /><br /><br />
-	
-	<div class="user-navigation">
-		<?php echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::NORMAL)), __('New Users')); 
-		
-			echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::APPROVED)), __('Approved Users')); 
-		
-			echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::DELETED)), __('Deleted Users')); 
-		
-			echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::DISAPPROVED)), __('Disapproved Users')); 
-		
-			echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::IN_REVIEW)), __('In review Users')); 
-		
-			echo HTML::anchor(Route::get('admin_user')->uri(
-			array('directory' => 'admin', 'action' => 'index', 'controller' => 'user'
-			, 'moderation' => Helper_AccountStatus::SPAM)), __('Spam Users')); 
+	<div class="cms-sub-navigation">
+		<?php 
+		foreach(Helper_View::get_cms_user_url_list() as $link)
+			echo $link;
 		?>
 	</div>
 	

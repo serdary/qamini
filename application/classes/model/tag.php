@@ -153,9 +153,9 @@ class Model_Tag extends ORM {
 	/**
 	 * Creates and returns a new instance of tag
 	 * 
-	 * @param string tag value
-	 * @param string created by
-	 * @param int timestamp
+	 * @param  string tag value
+	 * @param  string created by
+	 * @param  int timestamp
 	 * @return object
 	 */
 	public static function create_object($tag, $created_by, $time)

@@ -106,7 +106,7 @@ class Controller_Questions extends Controller_Template_Main {
 		
 		if (! $this->check_user_has_write_access(FALSE))
 		{
-			$this->request->redirect(Route::get('question')->uri());
+			$this->request->redirect(Route::get('static')->uri(array('action' => 'join')));
 		}
 
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
@@ -359,8 +359,10 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		if (! $this->check_user_has_write_access(FALSE))
 		{
-			$this->request->redirect(Route::get('question')->uri(
-				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
+			/*$this->request->redirect(Route::get('question')->uri(
+				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));*/
+			
+			$this->request->redirect(Route::get('static')->uri(array('action' => 'join')));
 		}
 		
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list

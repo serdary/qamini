@@ -1,5 +1,6 @@
 <?php defined('SYSPATH') OR die('No direct access allowed.'); ?>
 
+<div class="cms-main-nav">
 <span>
 	<?php echo HTML::anchor(Route::get('admin')->uri(
 		array('directory' => 'admin', 'action' => 'index', 'controller' => 'main')), __('Admin Home')); 
@@ -35,3 +36,4 @@
 		array('directory' => 'admin', 'action' => 'index', 'controller' => 'tag')), __('Tag Moderation')); 
 	?>
 </span>
+</div>

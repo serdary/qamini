@@ -1,5 +1,7 @@
 .questions-holder .post-moderation {
-	background-color: yellow;
+    border: 1px solid red;
+    margin-top: 5px;
+    padding: 5px;
 }
 .settings-holder {
 }
@@ -28,4 +30,24 @@
 }
 .tags-holder table td{
 	padding: 5px;
+}
+.cms-sub-navigation {
+	
+}
+.cms-sub-navigation a {
+	margin: 0 10px;
+}
+.cms-main-nav {
+	width: 100%;
+	background-color: #DDD;
+	margin-bottom: 20px;
+}
+.cms-main-nav span a {
+	color: #333;
+	text-decoration: none;
+	padding: 6px;
+	display: inline-block;
+}
+.cms-main-nav span a:hover {
+	background-color: #FFF;
 }

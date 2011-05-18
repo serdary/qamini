@@ -18,7 +18,7 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 		parent::before();
 		
 		if ($this->user === NULL || 
-		!$this->user->has('roles', ORM::factory('role', array('name' => 'admin'))))
+			!$this->user->has('roles', ORM::factory('role', array('name' => 'admin'))))
 		{
 			$this->prepare_error_response(__('Error Occured'));
 			//$this->request->redirect(Route::get('homepage')->uri());
@@ -40,7 +40,9 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 				throw new Kohana_Exception('Post is not available');
 		}
 		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, "AdminAjax::action_postmoderate Could not fetch the post by ID: $post_id");
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 
+				"AdminAjax::action_postmoderate Could not fetch the post by ID: $post_id");
+			
 			$this->prepare_error_response(__('Post is not available'));
 		}
 
@@ -67,7 +69,9 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 				$this->prepare_error_response(__('User is not available'));
 		}
 		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, "AdminAjax::action_usermoderate Could not fetch the user by ID: $user_id");
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 
+				"AdminAjax::action_usermoderate Could not fetch the user by ID: $user_id");
+			
 			$this->prepare_error_response(__('An Error Occured'));
 		}
 
@@ -127,7 +131,9 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 			if ($moderation_succesful)	$message = __('Moderation succeeded');
 		}
 		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'AdminAjax::action_spammoderate Could not moderate spams er: ' . $ex->getMessage());
+			Kohana_Log::instance()->add(Kohana_Log::ERROR, 
+				'AdminAjax::action_spammoderate Could not moderate spams er: ' . $ex->getMessage());
+			
 			$this->prepare_error_response(__('An Error Occured'));
 		}
 				
@@ -165,8 +171,6 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 
 	/**
 	 * Checks posted spam moderation data
-	 * 
-	 * @return int
 	 */
 	private function check_spam_moderate_data()
 	{

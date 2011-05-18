@@ -19,8 +19,9 @@ class Model_Comment extends Model_Post {
 	 */
 	public static function get($id, $only_moderated = TRUE)
 	{			
-		if ($only_moderated)	$post = self::get_moderated_comment($id);
-		else $post = self::get_comment_for_cms($id);
+		$post = $only_moderated
+			? self::get_moderated_comment($id)
+			: self::get_comment_for_cms($id);
 			
 		if (!$post->loaded())
 		{

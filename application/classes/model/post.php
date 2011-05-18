@@ -58,8 +58,9 @@
 	 */
 	public static function get($id, $only_moderated = TRUE)
 	{
-		if ($only_moderated)	$post = self::get_moderated_post($id);
-		else $post = self::get_post_for_cms($id);
+		$post = $only_moderated
+			? self::get_moderated_post($id)
+			: self::get_post_for_cms($id);
 				
 		return Model_Post::object_loaded($post, $id) ? $post : NULL;
 	}
@@ -86,7 +87,7 @@
 	 */	
 	public static function get_post_for_cms($id)
 	{
-		return ORM::factory('post')->where('id', '=', $id)->find();
+		return ORM::factory('post', $id);
 	}
 	
  	/**
@@ -811,7 +812,7 @@
 	 */
 	public function cms_moderate($moderation_type)
 	{
-		if (!$this->cms_valid_moderation($moderation_type))	return -1;
+		if (!$this->cms_valid_moderation_type($moderation_type))	return -1;
 		
 		if ($this->post_moderation === $moderation_type)	return 1;
 		
@@ -839,7 +840,7 @@
 	 * @param  string moderation type
 	 * @return boolean
 	 */
-	private function cms_valid_moderation($moderation_type)
+	private function cms_valid_moderation_type($moderation_type)
 	{
 		return $moderation_type === Helper_PostModeration::APPROVED 
 			|| $moderation_type === Helper_PostModeration::DISAPPROVED

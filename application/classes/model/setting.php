@@ -127,8 +127,4 @@ class Model_Setting extends ORM {
 
 		return $value;
 	}
-	
-	/* CMS Methods */
-	
-	/* CMS Methods */
 }

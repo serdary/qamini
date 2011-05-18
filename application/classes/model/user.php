@@ -519,7 +519,7 @@ class Model_User extends Model_Auth_User {
 	 */
 	public function cms_moderate($account_status)
 	{
-		if (!$this->cms_valid_moderation($account_status))	return -1;
+		if (! $this->cms_valid_moderation_type($account_status))	return -1;
 		
 		if ($this->account_status === $account_status)	return 1;
 		
@@ -540,7 +540,7 @@ class Model_User extends Model_Auth_User {
 	 * @param  string account status
 	 * @return boolean
 	 */
-	private function cms_valid_moderation($account_status)
+	private function cms_valid_moderation_type($account_status)
 	{
 		return $account_status === Helper_AccountStatus::APPROVED 
 			|| $account_status === Helper_AccountStatus::DISAPPROVED

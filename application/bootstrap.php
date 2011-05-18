@@ -127,7 +127,6 @@ Kohana::modules(array(
 // 'userguide'  => MODPATH.'userguide',  // User guide and API documentation
 ));
 
-
 // Route setup for user actions (signup, login, signout)
 Route::set('user', '<action>(/<id>)', array('id' => '[[:digit:]]{1,}', 
                                                    'action' => '(login|signup|signout)'
@@ -180,7 +179,7 @@ Route::set('vote', 'voting/<action>/<id>')->defaults(array('controller' => 'vote
 // Route setup for site pages, http://qamini.com/site/[page]
 Route::set('static', 'site/<action>',
 array(
-	'action' => '(about|team|help|contact|job|career)'
+	'action' => '(about|team|help|contact|job|career|join)'
 ))
 ->defaults(array(
 	'controller' => 'static'
@@ -205,6 +204,8 @@ Route::set('admin_post', '<directory>/post(/<action>(/<type>(/<moderation>)))',
 		'controller' => 'post',
 		'action'     => 'index',
 	));
+
+/* CMS Routes*/
 
 // Route setup for admin ajax actions
 Route::set('admin_ajax', '<directory>/ajax(/<action>(/<id>))',

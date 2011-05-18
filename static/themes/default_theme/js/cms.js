@@ -52,6 +52,10 @@ $(document).ready(function() {
 	$(".moderate_form").submit(function(e) {
 		form = this;
 		e.preventDefault();
+		
+		if (!confirm("Are you sure?"))
+			return false;
+		
 		var id = $(this.hdn_id).val();
 		var moderationVal = $('.moderate-select-' + id).val();
 
@@ -84,6 +88,10 @@ $(document).ready(function() {
 	$(".spam_moderate_form").submit(function(e) {
 		form = this;
 		e.preventDefault();
+
+		if (!confirm("Are you sure?"))	
+			return false;
+		
 		var id = $(this.hdn_id).val();
 		var delete_all_posts = $(this.input_delete_all_posts).is(':checked');
 		var mark_anonymous = $(this.input_mark_anonymous_all_posts).is(':checked');

@@ -63,4 +63,12 @@ class Controller_Static extends Controller_Template_Main {
 	{
 		$this->template->content = View::factory($this->get_theme_directory() . 'static/career');
 	}
+
+	/**
+	 * Action to display call users to join to website 
+	 */
+	public function action_join()
+	{
+		$this->template->content = View::factory($this->get_theme_directory() . 'static/join');
+	}
 }

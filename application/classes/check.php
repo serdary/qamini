@@ -10,7 +10,7 @@
 class Check
 {
 	/**
-	 * Checks if it is null
+	 * Checks if value is null
 	 * 
 	 * @param  mixed $val
 	 * @return boolean
@@ -21,7 +21,7 @@ class Check
 	}
 	
 	/**
-	 * Checks if it is not null
+	 * Checks if it value not null
 	 * 
 	 * @param  mixed $val
 	 * @return boolean
