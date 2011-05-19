@@ -1,7 +1,7 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
 /**
- * Qamini Tag Model
+ * Qamini Post Tag Model
  *
  * @package   qamini
  * @uses      Extends ORM

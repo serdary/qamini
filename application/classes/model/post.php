@@ -444,9 +444,9 @@
 	/**
 	 * Handles user's reputation points, updates relevant user columns.
 	 *
+	 * @param  object user
 	 * @param  string reputation type
 	 * @param  bool true if rep. point will be decreased according to rep. type
-	 * @param  object user
 	 * @uses   Model_Reputation::create_reputation()
 	 * @uses   Model_Reputation::delete_reputation()
 	 * @uses   Model_User::update_reputation()
@@ -460,6 +460,9 @@
 				break;
 			case Model_Reputation::ANSWER_ADD:
 					$user->answer_count += ($subtract) ? -1 : 1;
+				break;
+			case Model_Reputation::COMMENT_ADD:
+					$user->comment_count += ($subtract) ? -1 : 1;
 				break;
 		}
 
@@ -492,14 +495,19 @@
 					}
 
 					$owner_user->update_reputation($reputation_type, $subtract);
+					
+					BadgeService::instance()->handle_badges($owner_user, $reputation_type, $subtract);
 					break;
 				default:
 					$user->update_reputation($reputation_type, $subtract);
+			
+					BadgeService::instance()->handle_badges($user, $reputation_type, $subtract);
 					break;
 			}
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): ' . $ex->getMessage());
+			exit(0);
 		}
 	}
 	

@@ -87,6 +87,25 @@ class Model_Reputation extends ORM {
 	}
 	
 	/**
+	 * Gets total reputation of user by reputation type(s)
+	 *
+	 * @param  int user id
+	 * @param  array reputation types
+	 * @return int
+	 */
+	public static function get_user_reputation_by_type($user_id, Array $reputation_types)
+	{
+		$res = ORM::factory('reputation')->where('user_id', '=', $user_id)
+			->and_where_open();
+			
+		foreach ($reputation_types as $rep)
+			$res = $res->or_where('reputation_type', '=', $rep);
+		
+		return $res->and_where_close()
+				->count_all();
+	}
+	
+	/**
 	 * Checks if any of the object is loaded in Model_Reputation objects array
 	 * 
 	 * @param  array Model_Reputation instances

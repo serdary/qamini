@@ -31,6 +31,11 @@ return array(
 	'cache_ttl' => 60, //86400, // 3600 * 24 --> 1 day
 
 	/**
+	 * Qamini cache time for badges to live
+	 */
+	'cache_ttl_badges' => 1200, //86400, // 3600 * 24 --> 1 day
+
+	/**
 	 * Pass reset link expiration time (in seconds)
 	 */
 	'reset_password_expiration_time' => 7200,

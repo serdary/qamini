@@ -14,6 +14,8 @@ class Model_Setting extends ORM {
 	protected $_created_column = array('column' => 'created_at', 'format' => TRUE);
 	protected $_updated_column = array('column' => 'updated_at', 'format' => TRUE);
 	
+	private $_cache;
+	
 	/**
 	 * Holds settings fetched from DB
 	 *
@@ -46,9 +48,9 @@ class Model_Setting extends ORM {
 	 */
 	public function load_settings()
 	{
-		$cache = Cache::instance(Kohana::config('config.cache_driver'));
+		$this->_cache = Cache::instance(Kohana::config('config.cache_driver'));
 
-		if ($this->loaded_from_cache($cache))	return;
+		if ($this->loaded_from_cache())	return;
 
 		if (!$this->loaded_from_db())	$this->load_from_config();
 
@@ -58,10 +60,17 @@ class Model_Setting extends ORM {
 			return;
 		}
 
-		// Set cache
+		$this->set_cache();
+	}
+	
+	/**
+	 * Sets settings cache
+	 */
+	private function set_cache()
+	{
 		try {
 			if ($this->_settings)
-				$cache->set('settings', $this->_settings, (int) Kohana::config('config.cache_ttl'));	
+				$this->_cache->set('settings', $this->_settings, (int) Kohana::config('config.cache_ttl'));	
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Setting::load_settings, ex: ' . $ex->getMessage());
@@ -71,12 +80,11 @@ class Model_Setting extends ORM {
 	/**
 	 * Tries to load settings from cache
 	 * 
-	 * @param object cache instance
 	 * @return boolean
 	 */
-	private function loaded_from_cache($cache)
+	private function loaded_from_cache()
 	{
-		return ($this->_settings = $cache->get('settings'));
+		return ($this->_settings = $this->_cache->get('settings'));
 	}
 	
 	/**

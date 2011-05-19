@@ -14,6 +14,7 @@ class Model_User extends Model_Auth_User {
 	(
 		'user_tokens'	=> array('model' => 'user_token'),
 		'roles'       	=> array('model' => 'role', 'through' => 'roles_users'),
+		'badges' 		=> array('model' => 'badge', 'through' => 'userbadge'),
 		'posts' 		=> array(),
 	);
 
