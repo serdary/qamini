@@ -143,6 +143,9 @@ class BadgeService
 		
 		foreach ($possible_badges as $p)
 			Kohana_Log::instance()->add(Kohana_Log::INFO, 'possible badges: ' . $p);
+		
+		$reputation_value = (int) Model_Setting::instance()->get($reputation_type);
+		$subtract = ($reputation_value > 0) ? $subtract : !$subtract;
 			
 		$badge_result = array();
 		foreach ($possible_badges as $badge)
@@ -154,7 +157,12 @@ class BadgeService
 		}
 		
 		foreach ($badge_result as $r)
+		{
 			Kohana_Log::instance()->add(Kohana_Log::INFO, 'result: ' . $r[0] . ' ---- ' . $r[1]);
+			
+			if ($r[0] === 1)
+				Message::set(Message::NOTICE, $r[1] . "\n");
+		}
 	}
 	
 	/**

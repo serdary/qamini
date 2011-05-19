@@ -507,7 +507,6 @@
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Post::handle_reputation(): ' . $ex->getMessage());
-			exit(0);
 		}
 	}
 	

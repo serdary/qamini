@@ -76,11 +76,8 @@ class Model_Badge extends ORM {
 	private function process_badge($user)
 	{
 		if (! $user->has('badges', ORM::factory('badge', array('badge_type' => $this->badge_type))))
-		{
-			/*$user->add('badges', ORM::factory('badge', array('badge_type' => $this->badge_type))
-			                          , array('created_at' => time(), 'updated_at' => time()));*/
-			
-			// Adding relation could not have used. Thats because we need craeted_at and updated_at
+		{			
+			// Adding relation could not used. Thats because we need created_at and updated_at
 			// columns for future reference
 			$ub = Model_UserBadge::create_userbadge($this->id, $user->id);
 			$ub->save();
@@ -97,7 +94,7 @@ class Model_Badge extends ORM {
 
 		$user->remove('badges', $this);
 
-		return array(1, $this->badge_name . __(' Lost!'));
+		return array(3, $this->badge_name . __(' Lost!'));
 	}
 	
 	private function check_achievement_supporter($user)
