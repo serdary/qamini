@@ -148,10 +148,16 @@ class Controller_User extends Controller_Template_Main {
 			->set('dir_name', $this->get_active_theme_dir_name())
 			->set('token', $this->get_csrf_token())
 			->bind('post', $post)
+			->bind('use_recaptcha', $use_recaptcha)
+			->bind('recaptcha_image', $recaptcha_image)
 			->bind('errors', $errors);
 			
 		$this->set_signup_page_meta_texts();
-
+		
+		$use_recaptcha = (int) Model_Setting::instance()->get('recaptcha_active');
+		if ($use_recaptcha === 1)
+			$recaptcha_image = $this->get_recaptcha_image();
+		
 		if (!$_POST)	return;
 
 		$post = $_POST;
@@ -162,9 +168,13 @@ class Controller_User extends Controller_Template_Main {
 		// TODO: use validation object.
 		if (!isset($post['password']) || $post['password'] === '')
 		{
-			$errors = array('password' => 'Password is required.');
+			$errors = array('password' => __('Password is required.'));
 			return;
 		}
+		
+		// Check recaptcha if website requires captchas while registering
+		$this->check_recaptcha_if_active($errors);
+		if (! empty($errors))	return;
 
 		// Try to sign the user up
 		try {
@@ -179,6 +189,41 @@ class Controller_User extends Controller_Template_Main {
 		}
 		catch (ORM_Validation_Exception $ex) {
 			$errors = $ex->errors('models');
+		}
+	}
+	
+	/**
+	 * Returns recaptcha image
+	 * 
+	 * @return string
+	 */
+	private function get_recaptcha_image()
+	{
+		include Kohana::find_file('vendor', 'recaptcha/recaptchalib');
+	    return recaptcha_get_html(Kohana::config('captcha.public_key'));
+	}
+	
+	/**
+	 * If recaptcha is activated, checks if image is correct 
+	 * 
+	 * @param array errors
+	 */
+	private function check_recaptcha_if_active(& $errors)
+	{
+		$use_recaptcha = (int) Model_Setting::instance()->get('recaptcha_active');
+		if ($use_recaptcha !== 1)	return;
+		
+		$recaptcha_error = NULL;
+
+		$recaptcha_response = recaptcha_check_answer(Kohana::config('captcha.private_key')
+			, $_SERVER['REMOTE_ADDR']
+			, $_POST['recaptcha_challenge_field']
+			, $_POST['recaptcha_response_field']
+		);
+		
+		if(! $recaptcha_response->is_valid)
+		{
+			$errors = array('captcha' => __('Captch is not correct, please try again.'));
 		}
 	}
 

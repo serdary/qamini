@@ -21,4 +21,7 @@ return array(
 		'email_available' => 'Email is not available.',
 		'is_email_registered' => 'Email is not registered.',
 	),
+	'captcha' => array(
+        'wrong' => 'Captch is not correct, please try again.',
+	),
 );

@@ -16,7 +16,9 @@ class Model_Badge extends ORM {
 	 * Checks if current badge is applicable to the user.
 	 * Process the badge if user achieve / lost that
 	 * 
-	 * @param Model_User object $user
+	 * @param  Model_User object $user
+	 * @param  boolean    add / take back the badge
+	 * @return array result
 	 */
 	public function process($user, $subtract)
 	{
@@ -34,6 +36,12 @@ class Model_Badge extends ORM {
 		return $msg;
 	}
 	
+	/**
+	 * Checks achievement for the current badge for the user
+	 * 
+	 * @param  object user
+	 * @return array  result
+	 */
 	private function check_achievement_by_category($user)
 	{
 		$remaining_msg = '';
@@ -73,6 +81,11 @@ class Model_Badge extends ORM {
 		return array(0, sprintf($remaining_msg, $diff, $this->badge_name));
 	}
 	
+	/**
+	 * Adds achieved badge, if the user hasn't already achieved that
+	 * 
+	 * @param object user
+	 */
 	private function process_badge($user)
 	{
 		if (! $user->has('badges', ORM::factory('badge', array('badge_type' => $this->badge_type))))
@@ -87,6 +100,12 @@ class Model_Badge extends ORM {
 		return array(2, __('Already achieved'));
 	}
 	
+	/**
+	 * Take the current badge if user has achieved that
+	 * 
+	 * @param  object user
+	 * @return array
+	 */
 	private function undo_process_badge($user)
 	{
 		if (! $user->has('badges', ORM::factory('badge', array('badge_type' => $this->badge_type))))
@@ -97,6 +116,12 @@ class Model_Badge extends ORM {
 		return array(3, $this->badge_name . __(' Lost!'));
 	}
 	
+	/**
+	 * Checks the supporter badge category
+	 * 
+	 * @param  object user
+	 * @return array
+	 */
 	private function check_achievement_supporter($user)
 	{	
 		$total = Model_Reputation::get_user_reputation_by_type($user->id, 
@@ -108,6 +133,12 @@ class Model_Badge extends ORM {
 			, $this->badge_achieve_quantity - $total, $this->badge_name));
 	}
 	
+	/**
+	 * Checks other badge category
+	 * 
+	 * @param  object user
+	 * @return array
+	 */
 	private function check_achievement_other($user)
 	{	
 		$method = 'check_achievement_' . $this->badge_type;
@@ -123,6 +154,12 @@ class Model_Badge extends ORM {
 	 * Otherwise no badge can be achieved
 	 * */
 	
+	/**
+	 * Checks Other Badge Category -- Reputation 10 Reached
+	 * 
+	 * @param  object user
+	 * @return array
+	 */
 	private function check_achievement_rep_10_reached($user)
 	{
 		if ($user->reputation >= $this->badge_achieve_quantity)	return TRUE;
@@ -131,6 +168,12 @@ class Model_Badge extends ORM {
 			, $this->badge_achieve_quantity - $user->reputation, $this->badge_name));
 	}
 	
+	/**
+	 * Checks Other Badge Category -- Reputation 100 Reached
+	 * 
+	 * @param  object user
+	 * @return array
+	 */
 	private function check_achievement_rep_100_reached($user)
 	{
 		if ($user->reputation >= $this->badge_achieve_quantity)	return TRUE;
