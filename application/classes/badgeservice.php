@@ -4,22 +4,12 @@
  * Qamini Badge Service
  *
  * @package   qamini
+ * @uses      Extends BaseService
  * @since     0.5.0
  * @author    Serdar Yildirim
  */
-class BadgeService
+class BadgeService extends BaseService
 {
-	private $_cache;
-	
-	private $_badge_found;
-	
-	/**
-	 * Holds badges fetched from DB
-	 *
-	 * @var array
-	 */
-	private $_badges = array();
-
 	/**
 	 * Singleton instance for BadgeService
 	 * 
@@ -39,54 +29,10 @@ class BadgeService
 
 		return self::$_instance = new self;
 	}
-
-	/**
-	 * Loads all badges from DB
-	 */
-	public function load_badges()
-	{
-		if (! Check::isListEmptyOrNull($this->_badges))	return;	
-		
-		$this->_cache = Cache::instance(Kohana::config('config.cache_driver'));
-
-		$this->_badge_found = TRUE;
-		
-		if ($this->loaded_from_cache())	return;
-
-		$this->load_from_db();
-
-		if (empty($this->_badges))
-		{
-			Kohana_Log::instance()->add(Kohana_Log::INFO, 'Badges could not be loaded from DB');
-			$this->_badge_found = FALSE;
-			return;
-		}
-
-		$this->set_cache();
-	}
 	
-	/**
-	 * Sets badges cache
-	 */
-	private function set_cache()
+	public function __construct()
 	{
-		try {
-			if ($this->_badges)
-				$this->_cache->set('badges', $this->_badges, (int) Kohana::config('config.cache_ttl_badges'));	
-		}
-		catch (Exception $ex) {
-			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'BadgeService::load_badges, ex: ' . $ex->getMessage());
-		}
-	}
-	
-	/**
-	 * Tries to load badges from cache
-	 * 
-	 * @return boolean
-	 */
-	private function loaded_from_cache()
-	{
-		return ($this->_badges = $this->_cache->get('badges'));
+		$this->cache_key = 'all_badges';
 	}
 	
 	/**
@@ -94,35 +40,20 @@ class BadgeService
 	 * 
 	 * @return boolean
 	 */	
-	private function load_from_db()
+	protected function load_from_db()
 	{
-		$this->_badges = array();
+		$this->items = array();
 			
 		$data = ORM::factory('badge')->where('badge_status', '=', 'active')->find_all();
 		
 		foreach($data as $badge)
 		{
-			$this->_badges[$badge->id] = $badge;
+			$this->items[$badge->id] = $badge;
 		}
-	}
-
-	/**
-	 * Returns the badge
-	 *
-	 * @param   int    badge id
-	 * @return  object
-	 */
-	public function get($id)
-	{
-		$this->load_badges();
-		
-		if (! $this->_badge_found)	return;
-
-		if (array_key_exists($id, $this->_badges))	return $this->_badges[$id];
 	}
 	
 	/**
-	 * Handles a user badge after gaining / losing reputation
+	 * Handles user badge after achieving / losing reputation
 	 *
 	 * @param  object user
 	 * @param  string reputation type
@@ -130,13 +61,13 @@ class BadgeService
 	 */
 	public function handle_badges($user, $reputation_type, $subtract)
 	{
-		$this->load_badges();
+		$this->load_items();
 		
-		if (! $this->_badge_found)	return;
+		if (! $this->item_found)	return;
 		
 		$possible_badges = $this->get_possible_badges($reputation_type);
 		
-		Kohana_Log::instance()->add(Kohana_Log::INFO, '-----------------------------------------------------------------');
+		Kohana_Log::instance()->add(Kohana_Log::INFO, '----------------------------------------');
 		Kohana_Log::instance()->add(Kohana_Log::INFO, 'PB: ' . count($possible_badges) . ' RT: ' . $reputation_type);
 		
 		if (empty($possible_badges))	return;
@@ -175,7 +106,7 @@ class BadgeService
 	{
 		$badges = array();
 		
-		foreach ($this->_badges as $badge)
+		foreach ($this->items as $badge)
 		{
 			// Add badge if its category is "other", no need switch
 			if ($badge->badge_category_id == Helper_BadgeCategory::OTHER)

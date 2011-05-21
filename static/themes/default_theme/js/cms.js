@@ -67,8 +67,8 @@ $(document).ready(function() {
 			data: $(this).serialize() + "&moderationVal=" + moderationVal,
 			dataType: "json",
 
-			success: function(data) { CMS.ModerateSuccess(data, id) },
-			error: function(data) { CMS.ModerateError(data, id) },
+			success: function(data) { CMS.ModerateSuccess(data, id); },
+			error: function(data) { CMS.ModerateError(data, id); }
 		});
 		
 		return false;         
@@ -104,8 +104,8 @@ $(document).ready(function() {
 			data: $(this).serialize() + "&delete_all_posts=" + delete_all_posts + "&mark_anonymous=" + mark_anonymous,
 			dataType: "json",
 
-			success: function(data) { CMS.ModerateSpamSuccess(data, id) },
-			error: function(data) { CMS.ModerateSpamError(data, id) },
+			success: function(data) { CMS.ModerateSpamSuccess(data, id); },
+			error: function(data) { CMS.ModerateSpamError(data, id); }
 		});
 		
 		return false;         

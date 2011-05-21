@@ -369,3 +369,6 @@ h2 {
 	float:left;
 	margin:10px 0 0 120px;
 }
+.row-small input#recaptcha_response_field {
+	position: relative !important;
+}

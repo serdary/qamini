@@ -95,6 +95,9 @@ class Model_Badge extends ORM {
 			$ub = Model_UserBadge::create_userbadge($this->id, $user->id);
 			$ub->save();
 			
+			Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('PROCESS_BADGE user_id: %d badge: -%s (%d)-' 
+				, $user->id, $this->badge_name, $this->id));
+			
 			return array(1, $this->badge_name . __(' Achieved!'));
 		}
 		return array(2, __('Already achieved'));
@@ -112,6 +115,9 @@ class Model_Badge extends ORM {
 			return array(2, __('User doesnt have'));
 
 		$user->remove('badges', $this);
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('UNDO_PROCESS_BADGE user_id: %d badge: -%s (%d)-' 
+			, $user->id, $this->badge_name, $this->id));
 
 		return array(3, $this->badge_name . __(' Lost!'));
 	}
