@@ -71,13 +71,7 @@ class BadgeService extends BaseService
 		
 		$possible_badges = $this->get_possible_badges($reputation_type);
 		
-		Kohana_Log::instance()->add(Kohana_Log::INFO, '----------------------------------------');
-		Kohana_Log::instance()->add(Kohana_Log::INFO, 'PB: ' . count($possible_badges) . ' RT: ' . $reputation_type);
-		
 		if (empty($possible_badges))	return;
-		
-		foreach ($possible_badges as $p)
-			Kohana_Log::instance()->add(Kohana_Log::INFO, 'possible badges: ' . $p);
 		
 		$reputation_value = (int) Model_Setting::instance()->get($reputation_type);
 		$subtract = ($reputation_value > 0) ? $subtract : !$subtract;
@@ -91,11 +85,16 @@ class BadgeService extends BaseService
 				$badge_result[] = $result;
 		}
 		
+		$current_user = Auth::instance()->get_user();
+		
 		foreach ($badge_result as $r)
-		{
-			Kohana_Log::instance()->add(Kohana_Log::INFO, 'result: ' . $r[0] . ' ---- ' . $r[1]);
+		{			
+			if ($r[0] !== 1)	continue;
 			
-			if ($r[0] === 1)
+			Kohana_Log::instance()->add(Kohana_Log::INFO, "BADGE: {$user->username} ({$user->id}) achieved {$r[1]} badge!");
+		
+			// The badge owner might be the post owner user, so skip this in that case
+			if ($current_user->id === $user->id)
 				Message::set(Message::NOTICE, $r[1] . "\n");
 		}
 	}

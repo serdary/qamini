@@ -530,14 +530,18 @@ class Model_User extends Model_Auth_User {
 		
 		if ($this->account_status === $account_status)	return 1;
 		
+		$old_account_status = $this->account_status;
 		$admin = Auth::instance()->get_user();
-		Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('CMS_MODERATE user_id: %d was: %s , made: %s by %s (%d)'
-			, $this->id, $this->account_status, $account_status, $admin->username, $admin->id));
 			
 		$this->account_status = $account_status;
 		
 		try {
-			if ($this->save())	return 1;
+			if ($this->save())	
+			{
+				Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('CMS_MODERATE user_id: %d was: %s , made: %s by %s (%d)'
+					, $this->id, $old_account_status, $account_status, $admin->username, $admin->id));
+				return 1;
+			}
 			else	return 0;
 		}
 		catch (Exception $ex) {

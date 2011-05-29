@@ -6,6 +6,11 @@
 		<?php echo $total_questions, ' ', ucfirst(Inflector::plural('question', $total_questions)); ?>
 	</div>
 
+	<?php
+	if (Check::isListEmptyOrNull($posts))
+		echo '<div class="no-post">', __('There is no post') , '</div>';
+	?>
+	
 	<?php foreach ($posts as $ind => $post) { ?>
 	<div class="row">
 		<div class="question-details">

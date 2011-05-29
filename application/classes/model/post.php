@@ -844,6 +844,9 @@
 		try {
 			if ($this->save())
 			{
+				Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('CMS_MODERATE POST: post_id: %d was: %s ' 
+					. ', made: %s', $this->id, $old_moderation_type, $moderation_type));
+					
 				$this->delete_tags_if_question($moderation_type);
 				
 				$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type, TRUE);
