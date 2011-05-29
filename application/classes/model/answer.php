@@ -253,6 +253,8 @@ class Model_Answer extends Model_Post {
 		$this->mark_post_anonymous();
 
 		$this->handle_reputation(Model_Reputation::ANSWER_ADD, true);
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO, 'ANSWER_DELETE: ' . $this->id);
 
 		return Model_Question::get($this->parent_post_id);
 	}
@@ -337,7 +339,7 @@ class Model_Answer extends Model_Post {
 		return 1;
 	}
 	
-	/*
+	/**
 	 * Undo accepts an answer
 	 */
 	private function process_undo_accept()
@@ -380,7 +382,7 @@ class Model_Answer extends Model_Post {
 	/**
 	 * Creates a new Model_Answer object from an associative array
 	 *
-	 * @param  array data
+	 * @param  array  data
 	 * @return object Instance of Model_Answer
 	 */
 	private static function create_object($data)

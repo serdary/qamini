@@ -89,7 +89,7 @@ class Controller_Answers extends Controller_Template_Main {
 
 		$parent_question = $this->process_delete_answer($answer_id);
 		
-		if ($parent_question === NULL)	return;
+		if (Check::isNullOrFalse($parent_question))	return;
 
 		$this->request->redirect(Route::get('question')->uri(
 			array('action'=>'detail', 'id' => $parent_question->id, 'slug' => $parent_question->slug)));

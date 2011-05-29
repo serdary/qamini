@@ -86,4 +86,7 @@ CREATE TABLE IF NOT EXISTS `userbadge` (
 INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `setting_status`) VALUES
 (18, 'recaptcha_active', '1', 1305483176, 1305483176, 'active');
 
+INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `setting_status`) VALUES 
+(19, 'badge_activated', '0', '1306647715', '1306647715', 'active');
+
 

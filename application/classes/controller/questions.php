@@ -88,7 +88,9 @@ class Controller_Questions extends Controller_Template_Main {
 	 * @uses Model_Question::check_question_title()
 	 */
 	public function action_ask()
-	{		
+	{
+		$this->add_ask_page_scripts();
+		
 		$notify_user = FALSE;
 
 		$question = new Model_Question;
@@ -114,6 +116,8 @@ class Controller_Questions extends Controller_Template_Main {
 		$question->handle_submitted_post_data($post);
 		$notify_user = $post['notify_user'] !== '0';
 
+		$question->sanitize_post_content($post);
+		
 		$question->values($post);
 
 		$errors = array();
@@ -280,7 +284,7 @@ class Controller_Questions extends Controller_Template_Main {
 	 */
 	private function add_detail_page_scripts()
 	{
-		$this->add_js(array('detail'));
+		$this->add_js(array('detail', 'tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
 	}
 	
 	/**
@@ -297,6 +301,14 @@ class Controller_Questions extends Controller_Template_Main {
 			->set('user_logged_in', $this->auth->logged_in())
 			->set('theme_dir', $this->get_theme_directory())
 			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Add javascript files to the template for ask page
+	 */
+	private function add_ask_page_scripts()
+	{
+		$this->add_js(array('tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
 	}
 	
 	/**
@@ -368,6 +380,8 @@ class Controller_Questions extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
+		$answer->sanitize_post_content($post);
+		
 		$answer->handle_submitted_post_data($post);
 
 		$add_answer_result = $this->process_add_answer($post, $answer, $question);
@@ -417,7 +431,7 @@ class Controller_Questions extends Controller_Template_Main {
 	/**
 	 * Creates taglist for the question.
 	 * 
-	 * @param array posted data
+	 * @param  array posted data
 	 * @return string
 	 */
 	private function create_taglist_from_posted_data($post)

@@ -42,5 +42,10 @@ return array(
 	/**
 	 * If set 1, recaptcha is active while signing up
 	 * */
-	'recaptcha_active' => 1
+	'recaptcha_active' => 1,
+
+	/**
+	 * If set 1 badge system is active. 0 => inactive
+	 * */
+	'badge_activated' => 1
 );

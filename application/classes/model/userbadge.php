@@ -18,6 +18,13 @@ class Model_UserBadge extends ORM {
 	
 	protected $_table_name = 'userbadge';
 	
+	/**
+	 * Creates and returns a new user badge object
+	 * 
+	 * @param  int badge id
+	 * @param  int user id
+	 * @return object
+	 */
 	public static function create_userbadge($badge_id, $user_id)
 	{
 		$ub = new Model_UserBadge;
@@ -28,6 +35,13 @@ class Model_UserBadge extends ORM {
 		return $ub;
 	}
 	
+	/**
+	 * Gets the user badge object
+	 * 
+	 * @param  int badge id
+	 * @param  int user id
+	 * @return object
+	 */
 	public static function get_userbadge($badge_id, $user_id)
 	{
 		return ORM::factory('userbadge')->where('user_id', '=', $user_id)

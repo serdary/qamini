@@ -55,12 +55,16 @@ class BadgeService extends BaseService
 	/**
 	 * Handles user badge after achieving / losing reputation
 	 *
-	 * @param  object user
-	 * @param  string reputation type
-	 * @param  bool true if rep. point will be decreased according to rep. type
+	 * @param  object  user
+	 * @param  string  reputation type
+	 * @param  boolean true if rep. point will be decreased according to rep. type
 	 */
 	public function handle_badges($user, $reputation_type, $subtract)
 	{
+		// Check if badge system is not activated, just return
+		$is_badge_activated = (boolean) Model_Setting::instance()->get('badge_activated');
+		if (!$is_badge_activated)	return;
+		
 		$this->load_items();
 		
 		if (! $this->item_found)	return;

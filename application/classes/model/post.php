@@ -111,7 +111,7 @@
 	 */
 	public function content_excerpt()
 	{
-		return nl2br(Text::limit_chars(HTML::chars($this->content)
+		return nl2br(Text::limit_chars(HTML::chars(strip_tags($this->content))
 									, Kohana::config('config.default_post_content_truncate_limit')));
 	}
 
@@ -122,7 +122,22 @@
 	 */
 	public function get_post_content()
 	{
-		return nl2br(HTML::chars($this->content));
+		return $this->content;//nl2br(HTML::chars($this->content));
+	}
+	
+ 	/**
+	 * Sanitize html post content
+	 * 
+	 * @param array posted data
+	 */
+	public function sanitize_post_content(&$post)
+	{
+		if (!isset($post['content']))	return;
+		
+		$allowed_elements = '<p><strong><em><u><h1><h2><h3><h4><h5><h6><img><li><ol><ul><span><div><br><ins><del>
+		<address><hr><blockquote>';
+
+		$post['content'] = strip_tags(stripslashes($post['content']), $allowed_elements);
 	}
 
 	/**

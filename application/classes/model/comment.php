@@ -11,7 +11,7 @@
 class Model_Comment extends Model_Post {
 
 	/**
-	 * Returns post by id
+	 * Returns comment by id
 	 *
 	 * @param  int     post id
 	 * @param  boolean false for cms
@@ -160,6 +160,8 @@ class Model_Comment extends Model_Post {
 		$this->handle_reputation(Model_Reputation::COMMENT_ADD, true);
 
 		$this->update_parent_comment_count(FALSE);
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO, 'COMMENT_DELETE: ' . $this->id);
 	}
 	
 	/**
@@ -180,7 +182,7 @@ class Model_Comment extends Model_Post {
 			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', Helper_PostType::COMMENT)
 			->and_where('parent_post_id', 'IN', DB::Expr(sprintf('(%s)', implode(',', $parent_ids))))
-			->order_by('latest_activity', 'desc')
+			->order_by('latest_activity', 'asc')
 			->find_all();
 			
 		$comments = array();
