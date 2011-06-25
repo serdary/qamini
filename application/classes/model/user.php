@@ -530,9 +530,9 @@ class Model_User extends Model_Auth_User {
 		
 		if ($this->account_status === $account_status)	return 1;
 		
-		$old_account_status = $this->account_status;
 		$admin = Auth::instance()->get_user();
-			
+		
+		$old_account_status = $this->account_status;	
 		$this->account_status = $account_status;
 		
 		try {

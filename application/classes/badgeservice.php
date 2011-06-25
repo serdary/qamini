@@ -73,7 +73,8 @@ class BadgeService extends BaseService
 		
 		if (empty($possible_badges))	return;
 		
-		$reputation_value = (int) Model_Setting::instance()->get($reputation_type);
+		$rep_value = Model_Setting::instance()->get($reputation_type);
+		$reputation_value = Check::isStringEmpty($rep_value) ? 1 : (int) $rep_value;
 		$subtract = ($reputation_value > 0) ? $subtract : !$subtract;
 			
 		$badge_result = array();
@@ -97,6 +98,33 @@ class BadgeService extends BaseService
 			if ($current_user->id === $user->id)
 				Message::set(Message::NOTICE, $r[1] . "\n");
 		}
+	}
+	
+	/**
+	 * Returns user's all badges in a list
+	 * 
+	 * @param  int $user_id
+	 * @return mixed
+	 */
+	public function get_user_badges($user_id)
+	{
+		if (!$user_id || $user_id < 1)	return NULL;
+		
+		$user_badges = Model_UserBadge::get_user_badges($user_id);
+		
+		if (Check::isListEmptyOrNull($user_badges)) return NULL;
+		
+		$this->load_items();
+		
+		if (! $this->item_found)	return NULL;
+		
+		$badges = array();
+		foreach ($user_badges as $ub)
+		{
+			$badges[] = $this->items[$ub->badge_id];
+		}
+		
+		return $badges;
 	}
 	
 	/**

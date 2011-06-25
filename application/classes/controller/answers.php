@@ -50,7 +50,7 @@ class Controller_Answers extends Controller_Template_Main {
 			$this->request->redirect(Route::get('question')->uri());
 
 		$errors = array();
-		$notify_user = ($answer->notify_email !== '0');
+		$notify_user = $answer->notify_email !== '0';
 		 
 		// If form is not submitted, show the edit answer form
 		if (!$post = $_POST)	return;
@@ -90,6 +90,9 @@ class Controller_Answers extends Controller_Template_Main {
 		$parent_question = $this->process_delete_answer($answer_id);
 		
 		if (Check::isNullOrFalse($parent_question))	return;
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Answer Delete:: %d user deleted A Id: %d", $this->user->id, $answer_id));
 
 		$this->request->redirect(Route::get('question')->uri(
 			array('action'=>'detail', 'id' => $parent_question->id, 'slug' => $parent_question->slug)));

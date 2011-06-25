@@ -182,7 +182,7 @@ class Model_Comment extends Model_Post {
 			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', Helper_PostType::COMMENT)
 			->and_where('parent_post_id', 'IN', DB::Expr(sprintf('(%s)', implode(',', $parent_ids))))
-			->order_by('latest_activity', 'asc')
+			->order_by('created_at', 'asc')
 			->find_all();
 			
 		$comments = array();

@@ -9,7 +9,7 @@
  */
 abstract class BaseService
 {
-	private $_cache;
+	protected $cache;
 	
 	protected $item_found;
 	
@@ -23,13 +23,21 @@ abstract class BaseService
 	protected $items = array();
 
 	/**
+	 * Ctor of BaseService
+	 */
+	public function __construct()
+	{
+		$this->cache = Cache::instance(Kohana::config('config.cache_driver'));
+	}
+	
+	/**
 	 * Loads all items from DB
 	 */
 	public function load_items()
 	{
 		if (! Check::isListEmptyOrNull($this->items))	return;	
 		
-		$this->_cache = Cache::instance(Kohana::config('config.cache_driver'));
+		$this->cache = Cache::instance(Kohana::config('config.cache_driver'));
 
 		$this->item_found = TRUE;
 		
@@ -54,7 +62,7 @@ abstract class BaseService
 	{
 		try {
 			if ($this->items)
-				$this->_cache->set($this->cache_key, $this->items, (int) Kohana::config('config.cache_ttl'));	
+				$this->cache->set($this->cache_key, $this->items, (int) Kohana::config('config.cache_ttl'));	
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'BaseService::set_cache, ex: ' . $ex->getMessage());
@@ -68,7 +76,7 @@ abstract class BaseService
 	 */
 	private function loaded_from_cache()
 	{
-		return ($this->items = $this->_cache->get($this->cache_key));
+		return ($this->items = $this->cache->get($this->cache_key));
 	}
 	
 	abstract protected function load_from_db();

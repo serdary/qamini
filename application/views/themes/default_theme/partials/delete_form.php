@@ -1,6 +1,6 @@
 <div class="delete-form">
 
-<form action="<?php echo $form_action; ?>" method="post" accept-charset="utf-8">
+<form action="<?php echo $form_action; ?>" method="post" accept-charset="utf-8"" class="delete_form">
 
 	<input type="submit" value="<?php echo __($button_value) ?>" class="form-submit" />
 	

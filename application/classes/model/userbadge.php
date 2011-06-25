@@ -48,4 +48,15 @@ class Model_UserBadge extends ORM {
 			->and_where('badge_id', '=', $badge_id)
 			->find();
 	}
+	
+	/**
+	 * Gets the user's all badge objects
+	 * 
+	 * @param  int user id
+	 * @return array
+	 */
+	public static function get_user_badges($user_id)
+	{
+		return ORM::factory('userbadge')->where('user_id', '=', $user_id)->find_all();
+	}
 }

@@ -209,8 +209,15 @@ var Detail = function() {
 			});
 			
 			return false;
+		},
+		
+		ConfirmDialog: function() {
+			if (!confirm("Are you sure?"))
+				return false;
+			
+			return true;
 		}
-	}
+	};
 } ();
 
 $(document).ready(function() {	
@@ -233,5 +240,12 @@ $(document).ready(function() {
 		});
 		
 		return false;         
+	});
+	
+	$(".delete_form").submit(function(e) {
+		if (!confirm("Are you sure?"))
+			return false;
+		
+		return true;         
 	});
 });

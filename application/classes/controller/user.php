@@ -30,7 +30,8 @@ class Controller_User extends Controller_Template_Main {
 			->bind('current_user', $user)
 			->bind('questions', $questions)
 			->bind('total_questions', $total_questions)
-			->bind('pagination_questions', $pagination_questions);
+			->bind('pagination_questions', $pagination_questions)
+			->bind('badges', $badges);
 
 		// Try to get the user by username
 		if (!($user = ORM::factory('user')->get_user_by_username($username)))
@@ -44,6 +45,9 @@ class Controller_User extends Controller_Template_Main {
 		));
 
 		$questions = $user->get_user_posts($pagination_questions->items_per_page, $pagination_questions->offset);
+		
+		//$badges = BadgeService::instance()->get_user_badges($user->id);
+		$badges = $user->badges->find_all();
 		
 		$this->set_index_page_meta_texts($user);
 	}
@@ -199,7 +203,7 @@ class Controller_User extends Controller_Template_Main {
 	 */
 	private function get_recaptcha_image()
 	{
-		include Kohana::find_file('vendor', 'recaptcha/recaptchalib');
+		include_once Kohana::find_file('vendor', 'recaptcha/recaptchalib');
 	    return recaptcha_get_html(Kohana::config('captcha.public_key'));
 	}
 	

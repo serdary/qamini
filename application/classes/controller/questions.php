@@ -130,6 +130,9 @@ class Controller_Questions extends Controller_Template_Main {
 		$add_result = $this->process_add_question($question, $post, $tag_list, $errors);
 		
 		if ($add_result === FALSE)	return;
+
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Ask:: %d user added Q Id: %d, Q slug: %s", $this->user->id, $question->id, $question->slug));
 		
 		if ($question->id > 0)
 			$this->request->redirect(Route::get('question')->uri(
@@ -189,6 +192,9 @@ class Controller_Questions extends Controller_Template_Main {
 		$edit_result = $this->process_edit_question($question, $post, $errors);
 		
 		if ($edit_result === FALSE)	return;
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Edit:: %d user edited Q Id: %d", $this->user->id, $question->id));
 
 		$this->request->redirect(Route::get('question')->uri(
 			array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
@@ -220,6 +226,9 @@ class Controller_Questions extends Controller_Template_Main {
 
 			Message::set(Message::ERROR, __('Oops. Something went wrong, please try again.'));
 		}
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Delete:: %d user deleted Q Id: %d", $this->user->id, $question_id));
 
 		$this->request->redirect(Route::get('question')->uri());
 	}
@@ -388,6 +397,9 @@ class Controller_Questions extends Controller_Template_Main {
 
 		if ($add_answer_result === TRUE)
 		{
+			Kohana_Log::instance()->add(Kohana_Log::INFO
+				, sprintf("Controller-Question Add Answer:: %d user added A ID: %d for Q Id: %d", $this->user->id, $answer->id, $question->id));
+		
 			$this->request->redirect(Route::get('question')->uri(
 				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
 		}

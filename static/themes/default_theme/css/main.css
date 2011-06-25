@@ -14,6 +14,9 @@ blockquote {
     color: #444444;
     margin: 5px 15px;
 }
+strong {
+    font-weight: bold;
+}
 .wrapper {
     padding: 10px 0 0 30px;
     font-size: 13px;
@@ -299,7 +302,7 @@ blockquote {
 }
 .user-page-container .user-info .title {
     float: left;
-    width: 100px;
+    width: 120px;
 }
 .user-page-container .user-info .username {
     color: #0F649A;
@@ -317,6 +320,19 @@ blockquote {
 .user-page-container .user-info .answer-count {
     color: #0F649A;
     font-weight: bold;
+}
+.user-page-container .user-info .comment-count {
+    color: #0F649A;
+    font-weight: bold;
+}
+.user-page-container .user-info .achieved-badges {
+    width: 100%;
+}
+.user-page-container .user-info .achieved-badges .badge-value {
+    background-color: #666666;
+    color: #FFFFFF;
+    margin-right: 15px;
+    padding: 2px;
 }
 .post-form {
     clear: both;

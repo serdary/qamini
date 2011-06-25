@@ -507,8 +507,9 @@ class Model_Question extends Model_Post {
 			try {		
 				if (!$tag_obj->save())
 				{
-					Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Question::add_tags(): ' .
-						sprintf('Error while saving tag with name: %s: %s, id: %d', $tag, $tag_obj->id));
+					Kohana_Log::instance()->add(Kohana_Log::ERROR
+						, sprintf('Model_Question::add_tags: Error while saving tag with name: %s: %s, id: %d'
+							, $tag, $tag_obj->id));
 					continue;
 				}
 	
