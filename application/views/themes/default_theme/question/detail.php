@@ -65,7 +65,7 @@ if ($post_owner_info['id'] !== NULL && $post_owner_info['id'] > 0)
 }
 else 
 {
-	echo __('asked by: '), '<span>', $post_owner_info['created_by'], '</span>';
+	echo __('asked by: '), '<span>', HTML::chars($post_owner_info['created_by']), '</span>';
 }
 	
 echo ', ', $post->get_relative_creation_time();
