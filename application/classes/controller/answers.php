@@ -83,6 +83,8 @@ class Controller_Answers extends Controller_Template_Main {
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
+		
+		$this->add_edit_answer_page_scripts();
 
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($_POST, 'token', ''));
@@ -112,6 +114,14 @@ class Controller_Answers extends Controller_Template_Main {
 			->set('question_id', $question_id)
 			->set('theme_dir', $this->get_theme_directory())
 			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Adds the requred js files to make edit answer page work
+	 */
+	private function add_edit_answer_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
 	}
 	
 	/**

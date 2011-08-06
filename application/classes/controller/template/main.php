@@ -159,6 +159,14 @@ abstract class Controller_Template_Main extends Controller_Template {
 				array_unshift($this->template->scripts, $this->get_theme_static_directory() . 'js/' . $file . '.js');
 		}
 	}
+	
+	/**
+	 * Adds javascript files to make it work wysiwyg editor
+	 */
+	protected function add_wysiwyg_editor_js()
+	{
+		$this->add_js(array('tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
+	}
 
 	/**
 	 * Checks if the active user has been visited this question before.

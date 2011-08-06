@@ -14,7 +14,7 @@ var Detail = function() {
 					+ $('#content_' + parentId).val().replace(/\n/g, "<br />") 
 					+ '<span class="comment-action">' + data.comment_link + '</span></div>';
 					
-					$('.comment-group-' + parentId).prepend(comment).fadeIn(700);
+					$('.comment-group-' + parentId).append(comment).fadeIn(700);
 					
 					$('#content_' + parentId).val('');
 				}

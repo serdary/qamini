@@ -160,8 +160,6 @@ class Model_Comment extends Model_Post {
 		$this->handle_reputation(Model_Reputation::COMMENT_ADD, true);
 
 		$this->update_parent_comment_count(FALSE);
-		
-		Kohana_Log::instance()->add(Kohana_Log::INFO, 'COMMENT_DELETE: ' . $this->id);
 	}
 	
 	/**
@@ -206,6 +204,16 @@ class Model_Comment extends Model_Post {
 		}
 		
 		$parent->set_comments($comments);
+	}
+
+	/**
+	 * Change new lines to breaks and returns post content
+	 * 
+	 * @return string
+	 */
+	public function get_post_content()
+	{
+		return nl2br(HTML::chars($this->content));
 	}
 	
 	/**

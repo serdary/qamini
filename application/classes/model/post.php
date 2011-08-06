@@ -116,13 +116,13 @@
 	}
 
 	/**
-	 * Change new lines to breaks and returns post content
+	 * Returns post content
 	 * 
 	 * @return string
 	 */
 	public function get_post_content()
 	{
-		return $this->content;//nl2br(HTML::chars($this->content));
+		return $this->content;
 	}
 	
  	/**

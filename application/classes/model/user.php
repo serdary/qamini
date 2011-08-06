@@ -143,7 +143,8 @@ class Model_User extends Model_Auth_User {
 
 		$this->save();
 		
-		Kohana_Log::instance()->add(Kohana_Log::INFO, 'NEW REGISTRATION: ' . $data['username'] . ' succesfully registered.');
+		Kohana_Log::instance()->add(Kohana_Log::INFO, 'NEW REGISTRATION: ' . $data['username'] 
+			. ' succesfully registered. IP: ' . Request::$client_ip);
 
 		$this->add('roles', ORM::factory('role', array('name' => 'login')));
 

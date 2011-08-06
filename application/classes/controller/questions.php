@@ -155,6 +155,8 @@ class Controller_Questions extends Controller_Template_Main {
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
+		
+		$this->add_edit_page_scripts();
 			
 		$this->template->content = $this->get_edit_page_view()
 			->bind('post', $question)
@@ -316,6 +318,22 @@ class Controller_Questions extends Controller_Template_Main {
 	 * Add javascript files to the template for ask page
 	 */
 	private function add_ask_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
+	}
+
+	/**
+	 * Add javascript files to the template for edit page
+	 */
+	private function add_edit_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
+	}
+	
+	/**
+	 * Adds javascript files to make it work wysiwyg editor
+	 */
+	private function add_wysiwyg_editor_js()
 	{
 		$this->add_js(array('tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
 	}
