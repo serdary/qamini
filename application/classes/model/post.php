@@ -122,7 +122,7 @@
 	 */
 	public function get_post_content()
 	{
-		return $this->content;
+		return HTML::chars($this->content);
 	}
 	
  	/**

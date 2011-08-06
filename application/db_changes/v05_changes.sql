@@ -38,13 +38,6 @@ INSERT INTO `badges` (`id`, `badge_type`, `badge_category_id`, `badge_achieve_qu
 -- Constraints for dumped tables
 --
 
---
--- Constraints for table `badges`
---
-ALTER TABLE `badges`
-  ADD CONSTRAINT `badges_ibfk_2` FOREIGN KEY (`badge_category_id`) REFERENCES `badge_category` (`badge_category_id`);
-  
-  
 -- --------------------------------------------------------
 
 --
@@ -69,7 +62,12 @@ INSERT INTO `badge_category` (`badge_category_id`, `badge_category`) VALUES
 (5, 'supporter'),
 (6, 'other');
 
-
+--
+-- Constraints for table `badges`
+--
+ALTER TABLE `badges`
+  ADD CONSTRAINT `badges_ibfk_2` FOREIGN KEY (`badge_category_id`) REFERENCES `badge_category` (`badge_category_id`);
+  
 --
 -- Table structure for table `userbadge`
 --
@@ -87,6 +85,7 @@ INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `setti
 (18, 'recaptcha_active', '1', 1305483176, 1305483176, 'active');
 
 INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `setting_status`) VALUES 
-(19, 'badge_activated', '0', '1306647715', '1306647715', 'active');
+(19, 'badge_activated', '1', '1306647715', '1306647715', 'active');
 
+ALTER TABLE `users` ADD `comment_count` INT( 6 ) UNSIGNED NOT NULL AFTER `answer_count` 
 

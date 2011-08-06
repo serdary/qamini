@@ -7,7 +7,7 @@
 	<div class="row">
 		<div class="title">
 		<?php
-		echo HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), $tag->value, array('class' => 'tag')), 
+		echo HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value), array('class' => 'tag')), 
 		     '<span class="tag-questions">', 
 		     $tag->post_count,  
 		     __(' questions tagged.'), 

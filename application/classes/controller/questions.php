@@ -331,14 +331,6 @@ class Controller_Questions extends Controller_Template_Main {
 	}
 	
 	/**
-	 * Adds javascript files to make it work wysiwyg editor
-	 */
-	private function add_wysiwyg_editor_js()
-	{
-		$this->add_js(array('tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
-	}
-	
-	/**
 	 * Returns view object for ask page
 	 * 
 	 * @return object
