@@ -20,6 +20,8 @@
 	
 	protected $_table_name = 'posts';
 	
+	public $allowed_elements = '<p><strong><em><u><h1><h2><h3><h4><h5><h6><img><li><ol><ul><span><div><br><ins><del><address><hr><blockquote>';
+	
 	/**
 	 * Validation rules for post object
 	 * 
@@ -122,7 +124,7 @@
 	 */
 	public function get_post_content()
 	{
-		return HTML::chars($this->content);
+		return strip_tags($this->content, $this->allowed_elements);
 	}
 	
  	/**
@@ -134,10 +136,7 @@
 	{
 		if (!isset($post['content']))	return;
 		
-		$allowed_elements = '<p><strong><em><u><h1><h2><h3><h4><h5><h6><img><li><ol><ul><span><div><br><ins><del>
-		<address><hr><blockquote>';
-
-		$post['content'] = strip_tags(stripslashes($post['content']), $allowed_elements);
+		$post['content'] = strip_tags(stripslashes($post['content']), $this->allowed_elements);
 	}
 
 	/**
