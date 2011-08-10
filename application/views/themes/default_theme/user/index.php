@@ -73,7 +73,7 @@
 			<div class="title">
 			<?php
 			echo HTML::anchor(Route::get('question')->uri(array('action' => 'detail'
-								, 'id' => $post->id, 'slug' => $post->slug)), $post->title);
+								, 'id' => $post->id, 'slug' => $post->slug)), HTML::chars($post->title));
 			?>
 			</div>
 			<div class="content"><?php echo $post->content_excerpt(); ?></div>
@@ -82,7 +82,7 @@
 				$tags_html = '';
 				foreach ($post->get_tags() as $tag)
 				{
-					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), $tag->value);
+					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value));
 				}
 				
 				if ($tags_html !== '')
