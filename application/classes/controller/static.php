@@ -30,8 +30,8 @@ class Controller_Static extends Controller_Template_Main {
 	{
 		$this->template->content = View::factory($this->get_theme_directory() . 'static/about');
 		
-		$this->set_template_metas(new WebsiteMeta(__('About ') . Kohana::config('config.website_name')
-			, __('About page of ') . Kohana::config('config.website_name') . ' question and answer website'));
+		$this->set_template_metas(new WebsiteMeta(__('About ') . Kohana::$config->load('config.website_name')
+			, __('About page of ') . Kohana::$config->load('config.website_name') . ' question and answer website'));
 	}
 
 	/**
@@ -41,8 +41,8 @@ class Controller_Static extends Controller_Template_Main {
 	{
 		$this->template->content = View::factory($this->get_theme_directory() . 'static/help');
 		
-		$this->set_template_metas(new WebsiteMeta(__('Help ') . Kohana::config('config.website_name')
-			, __('Help page of ') . Kohana::config('config.website_name') . ' question and answer website'));
+		$this->set_template_metas(new WebsiteMeta(__('Help ') . Kohana::$config->load('config.website_name')
+			, __('Help page of ') . Kohana::$config->load('config.website_name') . ' question and answer website'));
 	}
 
 	/**
@@ -52,8 +52,8 @@ class Controller_Static extends Controller_Template_Main {
 	{
 		$this->template->content = View::factory($this->get_theme_directory() . 'static/contact');
 		
-		$this->set_template_metas(new WebsiteMeta(__('Contact ') . Kohana::config('config.website_name')
-			, __('Contact page of ') . Kohana::config('config.website_name') . ' question and answer website'));
+		$this->set_template_metas(new WebsiteMeta(__('Contact ') . Kohana::$config->load('config.website_name')
+			, __('Contact page of ') . Kohana::$config->load('config.website_name') . ' question and answer website'));
 	}
 
 	/**

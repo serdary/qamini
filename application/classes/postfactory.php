@@ -17,8 +17,10 @@ class PostFactory {
 				return new Model_Answer;
 			case Helper_PostType::COMMENT:
 				return new Model_Comment;
-			default:
+			case Helper_PostType::QUESTION:
 				return new Model_Question;
+			default:
+				return new Model_Post;
 		}
 	}
 	

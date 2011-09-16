@@ -1,0 +1,7 @@
+logs/*
+system/*
+cache/*
+.buildpath
+.htaccess
+.project
+.settings

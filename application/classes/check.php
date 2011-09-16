@@ -70,7 +70,7 @@ class Check
 	 * @param  array $arr
 	 * @return boolean
 	 */
-	public static function isListEmptyOrNull(Array &$arr)
+	public static function isListEmptyOrNull(&$arr)
 	{
 		return $arr === NULL || count($arr) < 1;
 	}

@@ -1,5 +1,20 @@
+h1 {
+    font-size: 22px;
+    font-weight: bold;
+}
 h2 {
-	font-size: 18px;
+    font-size: 18px;
+    font-weight: bold;
+}
+h3 {
+    font-size: 14px;
+    font-weight: bold;
+}
+blockquote {
+    color: #444444;
+    margin: 5px 15px;
+}
+strong {
     font-weight: bold;
 }
 .wrapper {
@@ -70,7 +85,7 @@ h2 {
     text-decoration: underline;
 }
 .navigation .add-question {
-	float: left;
+    float: left;
 }
 .wrapper .content {
 }
@@ -94,7 +109,7 @@ h2 {
     padding-left: 20px;
 }
 .wrapper .footer .footer-nav-item a {
-	color: #444444;
+    color: #444444;
     font-size: 14px;
     text-decoration: none;
 }
@@ -105,10 +120,10 @@ h2 {
 .wrapper .footer .qamini-credit a,
 .wrapper .footer .qamini-credit a:visited {
     text-decoration: underline;
-	color: #444444;
+    color: #444444;
 }
 .wrapper .footer .footer-nav-item a:visited {
-	color: #444444;
+    color: #444444;
 }
 .wrapper .footer .qamini-credit {
     clear: both;
@@ -117,7 +132,7 @@ h2 {
     margin-right: 5px;
 }
 .wrapper .kohana-development {
-	/*display: none;*/
+    /*display: none;*/
     clear: both;
     margin-top: 50px;
     max-width: 900px;
@@ -270,12 +285,12 @@ h2 {
     background-color: #0F649A;    
 }
 .post-time {
-	color: #444444;
+    color: #444444;
     margin-top: 7px;
     line-height: 16px;
 }
 .post-time span {
-	font-weight: bold;
+    font-weight: bold;
 }
 .user-page-container {
 }
@@ -287,7 +302,7 @@ h2 {
 }
 .user-page-container .user-info .title {
     float: left;
-    width: 100px;
+    width: 120px;
 }
 .user-page-container .user-info .username {
     color: #0F649A;
@@ -306,6 +321,19 @@ h2 {
     color: #0F649A;
     font-weight: bold;
 }
+.user-page-container .user-info .comment-count {
+    color: #0F649A;
+    font-weight: bold;
+}
+.user-page-container .user-info .achieved-badges {
+    width: 100%;
+}
+.user-page-container .user-info .achieved-badges .badge-value {
+    background-color: #666666;
+    color: #FFFFFF;
+    margin-right: 15px;
+    padding: 2px;
+}
 .post-form {
     clear: both;
     float: left;
@@ -314,7 +342,6 @@ h2 {
     clear: both;
     float: left;
     margin: 5px 0;
-    width: 526px;
 }
 .post-form .row-small {
     clear: both;
@@ -331,20 +358,27 @@ h2 {
     float: left;
     width: 400px;
 }
+.post-form .text-input-big {
+    float: left;
+    width: 600px;
+}
 .post-form .text-input-small {
     float: left;
     width: 180px;
 }
 .post-form textarea {
-    height: 150px;
-    width: 400px;
+    height: 250px;
+    width: 600px;
+}
+.post-form .mceEditor {
+    float:left;
 }
 .post-form .form-submit {
-	width: 100px;
+    width: 100px;
     float: right;
 }
 .post-form .form-submit-long {
-	width: 150px;
+    width: 150px;
     float: right;
 }
 .post-form h2 {
@@ -365,7 +399,16 @@ h2 {
     margin: 2px 0;
 }
 .tag-info {
-	clear:both;
-	float:left;
-	margin:10px 0 0 120px;
+    clear:both;
+    float:left;
+    margin:10px 0 0 120px;
+}
+.row-small input#recaptcha_response_field {
+    position: relative !important;
+}
+ul, ol {
+    padding-left: 20px;
+}
+.top-message #messages {
+	list-style: none;
 }

@@ -62,7 +62,7 @@ abstract class Kohana_Database {
 			if ($config === NULL)
 			{
 				// Load the configuration for this database
-				$config = Kohana::config('database')->$name;
+				$config = Kohana::$config->load('database')->$name;
 			}
 
 			if ( ! isset($config['type']))
@@ -158,12 +158,18 @@ abstract class Kohana_Database {
 
 	/**
 	 * Disconnect from the database. This is called automatically by [Database::__destruct].
+	 * Clears the database instance from [Database::$instances].
 	 *
 	 *     $db->disconnect();
 	 *
 	 * @return  boolean
 	 */
-	abstract public function disconnect();
+	public function disconnect()
+	{
+		unset(Database::$instances[$this->_instance]);
+
+		return TRUE;
+	}
 
 	/**
 	 * Set the connection character set. This is called automatically by [Database::connect].
@@ -410,7 +416,7 @@ abstract class Kohana_Database {
 	 *     $db->quote('fred'); // 'fred'
 	 *
 	 * Objects passed to this function will be converted to strings.
-	 * [Database_Expression] objects will use the value of the expression.
+	 * [Database_Expression] objects will be compiled.
 	 * [Database_Query] objects will be compiled and converted to a sub-query.
 	 * All other objects will be converted using the `__toString` method.
 	 *
@@ -441,8 +447,8 @@ abstract class Kohana_Database {
 			}
 			elseif ($value instanceof Database_Expression)
 			{
-				// Use a raw expression
-				return $value->value();
+				// Compile the expression
+				return $value->compile($this);
 			}
 			else
 			{
@@ -477,6 +483,11 @@ abstract class Kohana_Database {
 	 *     // The value of "column" will be quoted
 	 *     $column = $db->quote_column('COUNT("column")');
 	 *
+	 * Objects passed to this function will be converted to strings.
+	 * [Database_Expression] objects will be compiled.
+	 * [Database_Query] objects will be compiled and converted to a sub-query.
+	 * All other objects will be converted using the `__toString` method.
+	 *
 	 * @param   mixed   column name or array(column, alias)
 	 * @return  string
 	 * @uses    Database::quote_identifier
@@ -496,8 +507,8 @@ abstract class Kohana_Database {
 		}
 		elseif ($column instanceof Database_Expression)
 		{
-			// Use a raw expression
-			$column = $column->value();
+			// Compile the expression
+			$column = $column->compile($this);
 		}
 		else
 		{
@@ -556,6 +567,11 @@ abstract class Kohana_Database {
 	 *
 	 *     $table = $db->quote_table($table);
 	 *
+	 * Objects passed to this function will be converted to strings.
+	 * [Database_Expression] objects will be compiled.
+	 * [Database_Query] objects will be compiled and converted to a sub-query.
+	 * All other objects will be converted using the `__toString` method.
+	 *
 	 * @param   mixed   table name or array(table, alias)
 	 * @return  string
 	 * @uses    Database::quote_identifier
@@ -575,8 +591,8 @@ abstract class Kohana_Database {
 		}
 		elseif ($table instanceof Database_Expression)
 		{
-			// Use a raw expression
-			$table = $table->value();
+			// Compile the expression
+			$table = $table->compile($this);
 		}
 		else
 		{
@@ -624,7 +640,7 @@ abstract class Kohana_Database {
 	 * Quote a database identifier
 	 *
 	 * Objects passed to this function will be converted to strings.
-	 * [Database_Expression] objects will use the value of the expression.
+	 * [Database_Expression] objects will be compiled.
 	 * [Database_Query] objects will be compiled and converted to a sub-query.
 	 * All other objects will be converted using the `__toString` method.
 	 *
@@ -645,8 +661,8 @@ abstract class Kohana_Database {
 		}
 		elseif ($value instanceof Database_Expression)
 		{
-			// Use a raw expression
-			$value = $value->value();
+			// Compile the expression
+			$value = $value->compile($this);
 		}
 		else
 		{

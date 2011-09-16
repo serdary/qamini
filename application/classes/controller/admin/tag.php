@@ -28,7 +28,7 @@ class Controller_Admin_Tag extends Controller_Admin_Template {
 
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_tags,
-			'items_per_page' => Kohana::config('config.default_tags_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_tags_page_size'),
 		));
 		
 		$tags = ORM::factory('tag')->get_tags($pagination->items_per_page, $pagination->offset);

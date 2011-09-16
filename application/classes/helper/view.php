@@ -7,7 +7,7 @@
  * @author    Serdar Yildirim
  */
 class Helper_View {
-
+	
 	/**
 	 * Returns list of question urls for CMS pages
 	 */
@@ -47,7 +47,7 @@ class Helper_View {
 		
 		return $links;
 	}
-
+	
 	/**
 	 * Returns a prepared user url for CMS pages
 	 * 
@@ -76,12 +76,13 @@ class Helper_View {
 		
 		return $links;
 	}
-
+	
 	/**
 	 * Returns a prepared post url for CMS pages
 	 * 
 	 * @param string post type
 	 * @param string moderation type
+	 * @return string
 	 */
 	public static function get_cms_post_url($post_type, $mod_type)
 	{
@@ -89,5 +90,17 @@ class Helper_View {
 			array('directory' => 'admin', 'action' => 'index', 'controller' => 'post'
 			, 'type' => $post_type, 'moderation' => $mod_type))
 			 , sprintf("%s %s", $mod_type, $post_type)); 
+	}
+	
+	/**
+	 * Returns value, if value is null/empty default value is returned
+	 * 
+	 * @param  string value
+	 * @param  string default value
+	 * @return string
+	 */
+	public static function get_value($value, $default_val = '')
+	{
+		return Check::isStringEmptyOrNull($value) ? $default_val : $value;
 	}
 }

@@ -21,6 +21,12 @@
 		<input id="password" name="password" type="password" maxlength="300" class="text-input-small" />
 	</div>
 	
+	<?php if ($use_recaptcha === 1) { ?>
+	<div class="row-small">
+		<?php echo $recaptcha_image; ?>
+	</div>
+	<?php } ?>
+	
 	<input type="hidden" name="token" value="<?php echo (isset($token)) ? $token : ''; ?>" />
 
 	<div class="row-small">

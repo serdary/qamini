@@ -14,6 +14,7 @@ class Model_User extends Model_Auth_User {
 	(
 		'user_tokens'	=> array('model' => 'user_token'),
 		'roles'       	=> array('model' => 'role', 'through' => 'roles_users'),
+		'badges' 		=> array('model' => 'badge', 'through' => 'userbadge'),
 		'posts' 		=> array(),
 	);
 
@@ -33,7 +34,7 @@ class Model_User extends Model_Auth_User {
 				array('min_length', array(':value', 1)),
 				array('max_length', array(':value', 32)),
 				array('regex', array(':value', '/^[-\pL\pN_.]++$/uD')),
-				array(array($this, 'username_available'), array(':validation', ':field')),
+				array(array($this, 'unique'), array('username', ':value')),
 			),
 			'password' => array(
 				array('not_empty'),
@@ -43,7 +44,7 @@ class Model_User extends Model_Auth_User {
 				array('min_length', array(':value', 4)),
 				array('max_length', array(':value', 127)),
 				array('email'),
-				array(array($this, 'email_available'), array(':validation', ':field')),
+				array(array($this, 'unique'), array('email', ':field')),
 			),
 		);
 	}
@@ -141,6 +142,9 @@ class Model_User extends Model_Auth_User {
 		$this->values($data);
 
 		$this->save();
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO, 'NEW REGISTRATION: ' . $data['username'] 
+			. ' succesfully registered. IP: ' . Request::$client_ip);
 
 		$this->add('roles', ORM::factory('role', array('name' => 'login')));
 
@@ -159,8 +163,8 @@ class Model_User extends Model_Auth_User {
 												. Auth::instance()->hash($this->email), 'http');
 											
 		$mailer = new QaminiMailer($this->email, $this->username
-			, Kohana::config('config.website_name') . __(' - Signup') 
-			, Kohana::config('config.website_name') . __(' Website'), 'confirm_signup'
+			, Kohana::$config->load('config.website_name') . __(' - Signup') 
+			, Kohana::$config->load('config.website_name') . __(' Website'), 'confirm_signup'
 			, array('url' => $link, 'username' => $this->username));
 			
 		$mailer->send();
@@ -224,7 +228,8 @@ class Model_User extends Model_Auth_User {
 		$this->where('email', '=', $data['email'])->find();
 		
 		$this->send_reset_password_mail();
-			
+
+		Kohana_Log::instance()->add(Kohana_Log::INFO, 'RESET PASS: ' . $data['email'] . ' requested new password.');
 		return TRUE;
 	}
 	
@@ -243,8 +248,8 @@ class Model_User extends Model_Auth_User {
 		$link = URL::site($uri, 'http');
 			
 		$mailer = new QaminiMailer($this->email, $this->username
-			, Kohana::config('config.website_name') . __(' - Reset Password') 
-			, Kohana::config('config.website_name') . __(' Website'), 'confirm_reset_password'
+			, Kohana::$config->load('config.website_name') . __(' - Reset Password') 
+			, Kohana::$config->load('config.website_name') . __(' Website'), 'confirm_reset_password'
 			, array('url' => $link, 'username' => $this->username));
 			
 		$mailer->send();
@@ -283,7 +288,7 @@ class Model_User extends Model_Auth_User {
 	 */
 	private function confirmation_link_expired($time)
 	{
-		return ($time + Kohana::config('config.reset_password_expiration_time')) < time();
+		return ($time + Kohana::$config->load('config.reset_password_expiration_time')) < time();
 	}
 
 	/**
@@ -336,8 +341,7 @@ class Model_User extends Model_Auth_User {
 	 */
 	public function check_password($old_password)
 	{
-		if (!Check::isNullOrFalse($user) && 
-			Auth::instance()->password($user->username) === Auth::instance()->hash($old_password))
+		if (Auth::instance()->password($this->username) === Auth::instance()->hash($old_password))
 		{
 			return;
 		}
@@ -418,6 +422,9 @@ class Model_User extends Model_Auth_User {
 
 		if ($subtract)	$reputation_value *= -1;
 
+		Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('UPDATE_REP: user_id: %d old rep: %d new rep: %d rep_type: %s'
+			, $this->id, $this->reputation, $this->reputation + $reputation_value, $reputation_type));
+
 		$this->reputation += $reputation_value;
 			
 		$this->update_last_activity_time();
@@ -487,7 +494,7 @@ class Model_User extends Model_Auth_User {
 			return (! Check::isNullOrFalse($user)) && $user->valid_user();
 		
 		// If login is not required, but a spammer is already logged in, dont allow
-		// This is not so right in the websites which allows anonymous questions and answers
+		// This is not so right in the websites which allows anonymous questions and answers, but still
 		if ($login_required === 0 && (! Check::isNullOrFalse($user)))	return TRUE;
 		
 		return $user->valid_user();
@@ -523,10 +530,18 @@ class Model_User extends Model_Auth_User {
 		
 		if ($this->account_status === $account_status)	return 1;
 		
+		$admin = Auth::instance()->get_user();
+		
+		$old_account_status = $this->account_status;	
 		$this->account_status = $account_status;
 		
 		try {
-			if ($this->save())	return 1;
+			if ($this->save())	
+			{
+				Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('CMS_MODERATE user_id: %d was: %s , made: %s by %s (%d)'
+					, $this->id, $old_account_status, $account_status, $admin->username, $admin->id));
+				return 1;
+			}
 			else	return 0;
 		}
 		catch (Exception $ex) {

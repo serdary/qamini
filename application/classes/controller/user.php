@@ -30,7 +30,8 @@ class Controller_User extends Controller_Template_Main {
 			->bind('current_user', $user)
 			->bind('questions', $questions)
 			->bind('total_questions', $total_questions)
-			->bind('pagination_questions', $pagination_questions);
+			->bind('pagination_questions', $pagination_questions)
+			->bind('badges', $badges);
 
 		// Try to get the user by username
 		if (!($user = ORM::factory('user')->get_user_by_username($username)))
@@ -40,10 +41,13 @@ class Controller_User extends Controller_Template_Main {
 
 		$pagination_questions = Pagination::factory(array(
 			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_profile_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_profile_questions_page_size'),
 		));
 
 		$questions = $user->get_user_posts($pagination_questions->items_per_page, $pagination_questions->offset);
+		
+		//$badges = BadgeService::instance()->get_user_badges($user->id);
+		$badges = $user->badges->find_all();
 		
 		$this->set_index_page_meta_texts($user);
 	}
@@ -148,10 +152,16 @@ class Controller_User extends Controller_Template_Main {
 			->set('dir_name', $this->get_active_theme_dir_name())
 			->set('token', $this->get_csrf_token())
 			->bind('post', $post)
+			->bind('use_recaptcha', $use_recaptcha)
+			->bind('recaptcha_image', $recaptcha_image)
 			->bind('errors', $errors);
 			
 		$this->set_signup_page_meta_texts();
-
+		
+		$use_recaptcha = (int) Model_Setting::instance()->get('recaptcha_active');
+		if ($use_recaptcha === 1)
+			$recaptcha_image = $this->get_recaptcha_image();
+		
 		if (!$_POST)	return;
 
 		$post = $_POST;
@@ -162,9 +172,13 @@ class Controller_User extends Controller_Template_Main {
 		// TODO: use validation object.
 		if (!isset($post['password']) || $post['password'] === '')
 		{
-			$errors = array('password' => 'Password is required.');
+			$errors = array('password' => __('Password is required.'));
 			return;
 		}
+		
+		// Check recaptcha if website requires captchas while registering
+		$this->check_recaptcha_if_active($errors);
+		if (! empty($errors))	return;
 
 		// Try to sign the user up
 		try {
@@ -179,6 +193,41 @@ class Controller_User extends Controller_Template_Main {
 		}
 		catch (ORM_Validation_Exception $ex) {
 			$errors = $ex->errors('models');
+		}
+	}
+	
+	/**
+	 * Returns recaptcha image
+	 * 
+	 * @return string
+	 */
+	private function get_recaptcha_image()
+	{
+		include_once Kohana::find_file('vendor', 'recaptcha/recaptchalib');
+	    return recaptcha_get_html(Kohana::$config->load('captcha.public_key'));
+	}
+	
+	/**
+	 * If recaptcha is activated, checks if image is correct 
+	 * 
+	 * @param array errors
+	 */
+	private function check_recaptcha_if_active(& $errors)
+	{
+		$use_recaptcha = (int) Model_Setting::instance()->get('recaptcha_active');
+		if ($use_recaptcha !== 1)	return;
+		
+		$recaptcha_error = NULL;
+
+		$recaptcha_response = recaptcha_check_answer(Kohana::$config->load('captcha.private_key')
+			, $_SERVER['REMOTE_ADDR']
+			, $_POST['recaptcha_challenge_field']
+			, $_POST['recaptcha_response_field']
+		);
+		
+		if(! $recaptcha_response->is_valid)
+		{
+			$errors = array('captcha' => __('Captch is not correct, please try again.'));
 		}
 	}
 
@@ -392,7 +441,7 @@ class Controller_User extends Controller_Template_Main {
 	private function set_index_page_meta_texts($user)
 	{
 		$this->prepare_metas($user->username . __(' Profile Page'), 
-			$user->username . __(' Profile Page on ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+			$user->username . __(' Profile Page on ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 	
 	/**
@@ -400,8 +449,8 @@ class Controller_User extends Controller_Template_Main {
 	 */
 	private function set_login_page_meta_texts()
 	{
-		$this->prepare_metas(__('Login to ') . Kohana::config('config.website_name'), 
-			__('Login to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+		$this->prepare_metas(__('Login to ') . Kohana::$config->load('config.website_name'), 
+			__('Login to ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 	
 	/**
@@ -409,7 +458,7 @@ class Controller_User extends Controller_Template_Main {
 	 */
 	private function set_signup_page_meta_texts()
 	{
-		$this->prepare_metas(__('Signup to ') . Kohana::config('config.website_name'), 
-			__('Signup to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+		$this->prepare_metas(__('Signup to ') . Kohana::$config->load('config.website_name'), 
+			__('Signup to ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 }

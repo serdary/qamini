@@ -4,14 +4,14 @@ Qamini - Open Source Mini Question & Answer Software
 Author: Serdar Yildirim // me[dot]serdaryildirim[dot]com
 Website: www.qamini.com
 Demo Website: www.qamini.com/qa
-Current version: 0.4
+Current version: 0.5
 
 
 Qamini Description
 ------------------
 
-Qamini is an open source question & answer software developed with MySql, PHP 5 and Kohana 3.1 MVC Framework.
-Main concern is simplicity, so there is no lots of extra features like thumbnails, post revisions or badges.
+Qamini is an open source question & answer software developed with MySql, PHP 5 and Kohana 3.2 MVC Framework.
+Main concern is simplicity, so there is no lots of extra features like thumbnails, post revisions.
 
 Qamini is themable, including all views, static files such as javascripts, stylesheets and images.
 
@@ -29,13 +29,14 @@ Current features
 * Tags
 * Internationalization Support
 * Content Management System for Posts, Users, Settings, Tags, Spam Management and more..
+* Badges. (Predefined and admin defined badges.)
 
 
 Installation
 ------------
 
 * Download qamini source codes.
-* Download latest version of kohana 3 (http://kohanaframework.org/) and copy all files under kohana/system to qamini/system.
+* Download latest version of kohana 3 (http://kohanaframework.org/) and copy all files under kohana/system to qamini/system. (NOTE: Latest tested Kohana version is: 3.2.0)
 * Copy kohana install.php file to /qamini and upload all files to your server.
 * Open your website and make sure your environment passes all tests.
 Remember, after your environment is ready, you need to rename or remove install.php file.

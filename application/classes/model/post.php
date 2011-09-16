@@ -20,6 +20,8 @@
 	
 	protected $_table_name = 'posts';
 	
+	public $allowed_elements = '<p><strong><em><u><h1><h2><h3><h4><h5><h6><img><li><ol><ul><span><div><br><ins><del><address><hr><blockquote>';
+	
 	/**
 	 * Validation rules for post object
 	 * 
@@ -111,18 +113,30 @@
 	 */
 	public function content_excerpt()
 	{
-		return nl2br(Text::limit_chars(HTML::chars($this->content)
-									, Kohana::config('config.default_post_content_truncate_limit')));
+		return nl2br(Text::limit_chars(HTML::chars(strip_tags($this->content))
+									, Kohana::$config->load('config.default_post_content_truncate_limit')));
 	}
 
 	/**
-	 * Change new lines to breaks and returns post content
+	 * Returns post content
 	 * 
 	 * @return string
 	 */
 	public function get_post_content()
 	{
-		return nl2br(HTML::chars($this->content));
+		return strip_tags($this->content, $this->allowed_elements);
+	}
+	
+ 	/**
+	 * Sanitize html post content
+	 * 
+	 * @param array posted data
+	 */
+	public function sanitize_post_content(&$post)
+	{
+		if (!isset($post['content']))	return;
+		
+		$post['content'] = strip_tags(stripslashes($post['content']), $this->allowed_elements);
 	}
 
 	/**
@@ -444,9 +458,9 @@
 	/**
 	 * Handles user's reputation points, updates relevant user columns.
 	 *
+	 * @param  object user
 	 * @param  string reputation type
 	 * @param  bool true if rep. point will be decreased according to rep. type
-	 * @param  object user
 	 * @uses   Model_Reputation::create_reputation()
 	 * @uses   Model_Reputation::delete_reputation()
 	 * @uses   Model_User::update_reputation()
@@ -460,6 +474,9 @@
 				break;
 			case Model_Reputation::ANSWER_ADD:
 					$user->answer_count += ($subtract) ? -1 : 1;
+				break;
+			case Model_Reputation::COMMENT_ADD:
+					$user->comment_count += ($subtract) ? -1 : 1;
 				break;
 		}
 
@@ -492,9 +509,13 @@
 					}
 
 					$owner_user->update_reputation($reputation_type, $subtract);
+					
+					BadgeService::instance()->handle_badges($owner_user, $reputation_type, $subtract);
 					break;
 				default:
 					$user->update_reputation($reputation_type, $subtract);
+			
+					BadgeService::instance()->handle_badges($user, $reputation_type, $subtract);
 					break;
 			}
 		}
@@ -645,7 +666,7 @@
 		array('action'=>'detail', 'id' => $post->id, 'slug' => $post->slug)), 'http');
 		
 		$mailer = new QaminiMailer($email_fields['email_address'], $email_fields['created_by']
-		, Kohana::config('config.website_name'), Kohana::config('config.website_name')
+		, Kohana::$config->load('config.website_name'), Kohana::$config->load('config.website_name')
 		, 'post_update_notification_email', array('url' => $link, 'created_by' => $email_fields['created_by']));
 		
 		$mailer->send();
@@ -822,6 +843,9 @@
 		try {
 			if ($this->save())
 			{
+				Kohana_Log::instance()->add(Kohana_Log::INFO, sprintf('CMS_MODERATE POST: post_id: %d was: %s ' 
+					. ', made: %s', $this->id, $old_moderation_type, $moderation_type));
+					
 				$this->delete_tags_if_question($moderation_type);
 				
 				$this->cms_process_post_moderation_effects($old_moderation_type, $moderation_type, TRUE);

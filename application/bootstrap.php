@@ -143,7 +143,7 @@ Route::set('user_ops', 'user_ops(/<action>(/<id>))')->defaults(
 // http://qamini.com/user/[username]/[action]/
 Route::set('profile', 'user/<username>(/<action>)',
 array(
-		'username' => '([a-zA-Z0-9._-]+)'
+		'username' => '([/\pL+/u0-9._-]+)'
 ))
 ->defaults(array(
 		'controller' => 'user',

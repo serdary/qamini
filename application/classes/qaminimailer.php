@@ -69,7 +69,7 @@ class QaminiMailer {
 	{
 		return Swift_Message::newInstance()
 			->setSubject($this->_receiver_mail)
-			->setFrom(array(Kohana::config('config.email') => $this->_receiver_mail))
+			->setFrom(array(Kohana::$config->load('config.email') => $this->_receiver_mail))
 			->setTo(array($this->_receiver_mail => $this->_receiver_mail))
 			->setBody($this->create_mail_body());
 	}
@@ -82,7 +82,7 @@ class QaminiMailer {
 	private function create_smpt_transport()
 	{
 		// Get the email configuration into array
-		$email_config = Kohana::config('email');
+		$email_config = Kohana::$config->load('email');
 		
 		return Swift_SmtpTransport::newInstance($email_config->server, $email_config->port, $email_config->security)
 			->setUsername($email_config->username)

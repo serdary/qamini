@@ -19,8 +19,8 @@ return array
 			 */
 			'hostname'   => 'localhost',
 			'database'   => 'qamini_development',
-			'username'   => '',
-			'password'   => '',
+			'username'   => 'root',
+			'password'   => 'root',
 			'persistent' => FALSE,
 		),
 		'table_prefix' => '',
@@ -40,8 +40,8 @@ return array
 			 * boolean  persistent  use persistent connections?
 			 */
 			'dsn'        => 'mysql:host=localhost;dbname=',
-			'username'   => '',
-			'password'   => '',
+			'username'   => 'root',
+			'password'   => 'root',
 			'persistent' => FALSE,
 		),
 		/**
@@ -60,8 +60,8 @@ return array
 		'connection' => array(
 			'hostname'   => 'localhost',
 			'database'   => 'qamini_test',
-			'username'   => '',
-			'password'   => '',
+			'username'   => 'root',
+			'password'   => 'root',
 			'persistent' => FALSE,
 		),
 		'table_prefix' => '',

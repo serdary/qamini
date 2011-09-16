@@ -8,4 +8,4 @@ Please confirm this action by clicking below link:
 
 Regards,
 
-<?php echo Kohana::config('config.website_url'); ?>
+<?php echo Kohana::$config->load('config.website_url'); ?>

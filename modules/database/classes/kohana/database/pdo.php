@@ -56,10 +56,9 @@ class Kohana_Database_PDO extends Database {
 		}
 		catch (PDOException $e)
 		{
-			throw new Database_Exception($e->getCode(), '[:code] :error', array(
-				':code' => $e->getMessage(),
-				':error' => $e->getCode(),
-			), $e->getCode());
+			throw new Database_Exception(':error',
+				array(':error' => $e->getMessage()),
+				$e->getCode());
 		}
 
 		if ( ! empty($this->_config['charset']))
@@ -69,12 +68,57 @@ class Kohana_Database_PDO extends Database {
 		}
 	}
 
+	/**
+	 * Create or redefine a SQL aggregate function.
+	 *
+	 * [!!] Works only with SQLite
+	 *
+	 * @link http://php.net/manual/function.pdo-sqlitecreateaggregate
+	 *
+	 * @param   string      $name       Name of the SQL function to be created or redefined
+	 * @param   callback    $step       Called for each row of a result set
+	 * @param   callback    $final      Called after all rows of a result set have been processed
+	 * @param   integer     $arguments  Number of arguments that the SQL function takes
+	 *
+	 * @return  boolean
+	 */
+	public function create_aggregate($name, $step, $final, $arguments = -1)
+	{
+		$this->_connection or $this->connect();
+
+		return $this->_connection->sqliteCreateAggregate(
+			$name, $step, $final, $arguments
+		);
+	}
+
+	/**
+	 * Create or redefine a SQL function.
+	 *
+	 * [!!] Works only with SQLite
+	 *
+	 * @link http://php.net/manual/function.pdo-sqlitecreatefunction
+	 *
+	 * @param   string      $name       Name of the SQL function to be created or redefined
+	 * @param   callback    $callback   Callback which implements the SQL function
+	 * @param   integer     $arguments  Number of arguments that the SQL function takes
+	 *
+	 * @return  boolean
+	 */
+	public function create_function($name, $callback, $arguments = -1)
+	{
+		$this->_connection or $this->connect();
+
+		return $this->_connection->sqliteCreateFunction(
+			$name, $callback, $arguments
+		);
+	}
+
 	public function disconnect()
 	{
 		// Destroy the PDO object
 		$this->_connection = NULL;
 
-		return TRUE;
+		return parent::disconnect();
 	}
 
 	public function set_charset($charset)
@@ -110,11 +154,12 @@ class Kohana_Database_PDO extends Database {
 			}
 
 			// Convert the exception in a database exception
-			throw new Database_Exception($e->getCode(), '[:code] :error ( :query )', array(
-				':code' => $e->getMessage(),
-				':error' => $e->getCode(),
-				':query' => $sql,
-			), $e->getCode());
+			throw new Database_Exception(':error [ :query ]',
+				array(
+					':error' => $e->getMessage(),
+					':query' => $sql
+				),
+				$e->getCode());
 		}
 
 		if (isset($benchmark))

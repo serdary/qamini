@@ -1,7 +1,7 @@
 Hello <?php echo $username; ?>,  
 
 
-You are successfully signed up on <?php echo Kohana::config('config.website_name'); ?>.
+You are successfully signed up on <?php echo Kohana::$config->load('config.website_name'); ?>.
 
 Please click below link to confirm your email address:
 
@@ -10,4 +10,4 @@ Please click below link to confirm your email address:
 
 Regards,
 
-<?php echo Kohana::config('config.website_url'); ?>
+<?php echo Kohana::$config->load('config.website_url'); ?>

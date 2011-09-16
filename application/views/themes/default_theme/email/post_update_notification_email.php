@@ -6,4 +6,4 @@ Below post has been updated.
 
 Regards,
 
-<?php echo Kohana::config('config.website_url'); ?>
+<?php echo Kohana::$config->load('config.website_url'); ?>

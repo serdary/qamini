@@ -12,7 +12,7 @@
 			<input type="hidden" name="token" value="<?php echo (isset($token)) ? $token : ''; ?>" />
 			<input type="hidden" name="hdn_parent_id" value="<?php echo $parent_id; ?>" />
 		
-			<input type="submit" value="<?php echo __("Add Comment") ?>" />
+			<input type="submit" value="<?php echo __("Add Comment") ?>" class="postComment" />
 		</div>
 	</div>
 	

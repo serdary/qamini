@@ -30,7 +30,7 @@ class Controller_Admin_User extends Controller_Admin_Template {
 		
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_users,
-			'items_per_page' => Kohana::config('config.default_users_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_users_page_size'),
 		));
 			
 		$users = Model_User::cms_get_users($pagination->items_per_page, $pagination->offset, $status);

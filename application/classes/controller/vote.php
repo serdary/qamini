@@ -192,7 +192,7 @@ class Controller_Vote extends Controller_Basic_Ajax {
 	 * @param  object instance of Model_Answer
 	 * @return mixed, false on error
 	 */
-	private function accept_post($post)
+	private function accept_post(Model_Answer $post)
 	{
 		try {
 			$result = $post->accept_post();

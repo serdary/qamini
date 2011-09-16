@@ -45,25 +45,8 @@ class Kohana_Unittest_Tests {
 	 */
 	static public function configure_environment($do_whitelist = TRUE, $do_blacklist = TRUE)
 	{
-		// During a webui request we need to manually load PHPUnit
-		if ( ! class_exists('PHPUnit_Util_Filter', FALSE) AND ! function_exists('phpunit_autoload'))
-		{
-			try
-			{
-				include_once 'PHPUnit/Autoload.php';
-			}
-			catch (ErrorException $e)
-			{
-				include_once 'PHPUnit/Framework.php';
-			}
-		}
-
-		// Allow PHPUnit to handle exceptions and errors
-		if (Kohana::$is_cli)
-		{
-			restore_exception_handler();
-			restore_error_handler();
-		}
+		restore_exception_handler();
+		restore_error_handler();
 
 		spl_autoload_register(array('Unittest_tests', 'autoload'));
 
@@ -72,7 +55,7 @@ class Kohana_Unittest_Tests {
 
 		Unittest_tests::$cache = (($cache = Kohana::cache('unittest_whitelist_cache')) === NULL) ? array() : $cache;
 
-		$config = Kohana::config('unittest');
+		$config = Kohana::$config->load('unittest');
 
 		if ($do_whitelist AND $config->use_whitelist)
 		{
@@ -83,21 +66,6 @@ class Kohana_Unittest_Tests {
 		{
 			Unittest_tests::blacklist($config->blacklist);
 		}
-	}
-
-	/**
-	 * Helper function to see if unittest is enabled in the config
-	 *
-	 * @return boolean
-	 */
-	static function enabled()
-	{
-		$p_environment = Kohana::config('unittest.environment');
-		$k_environment = Kohana::$environment;
-
-		return  (is_array($p_environment) AND in_array($k_environment, $p_environment))
-				OR
-				($k_environment === $p_environment);
 	}
 
 	/**
@@ -113,6 +81,8 @@ class Kohana_Unittest_Tests {
 		{
 			return $suite;
 		}
+		
+		Unittest_Tests::configure_environment();
 
 		$files = Kohana::list_files('tests');
 
@@ -246,7 +216,7 @@ class Kohana_Unittest_Tests {
 	 */
 	static protected function get_config_whitelist()
 	{
-		$config = Kohana::config('unittest');
+		$config = Kohana::$config->load('unittest');
 		$directories = array();
 
 		if ($config->whitelist['app'])
@@ -330,5 +300,4 @@ class Kohana_Unittest_Tests {
 			}
 		}
 	}
-
 }

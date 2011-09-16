@@ -9,13 +9,13 @@
 	<?php if ($form_type === Helper_PostType::QUESTION): ?>
 	<div class="row">
 		<label for="title"><?php echo __('Title') ?><span>*</span></label>
-		<input id="title" name="title" type="text" value="<?php echo HTML::chars($post->title) ?>" maxlength="300" class="text-input" />
+		<input id="title" name="title" type="text" value="<?php echo HTML::chars($post->title) ?>" maxlength="300" class="text-input-big" />
 	</div>
 	<?php endif ?>
 	
 	<div class="row">
 		<label for="content"><?php echo __('Content') ?><span>*</span></label>
-		<textarea id="content" name="content"><?php echo HTML::chars($post->content) ?></textarea>
+		<textarea id="content" name="content" class="mce-editor"><?php echo HTML::chars($post->content) ?></textarea>
 	</div>
 	
 	<div class="row">

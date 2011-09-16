@@ -19,6 +19,27 @@
 		<div class="title"><?php echo __('Answer Count:'); ?></div>
 		<div class="answer-count"><?php echo $current_user->answer_count; ?></div>
 	</div>
+	<div>
+		<div class="title"><?php echo __('Comment Count:'); ?></div>
+		<div class="comment-count"><?php echo $current_user->comment_count; ?></div>
+	</div>
+	<div>
+		<div class="title"><?php echo __('Achieved Badges:'); ?></div>
+		<div class="achieved-badges">
+		<?php
+		$badgesStr = '';
+		if (! Check::isListEmptyOrNull($badges))
+		{
+			foreach ($badges as $badge)
+			{
+				$badgesStr .= sprintf("<span class='badge-value'>%s</span>",  $badge->badge_name);
+			}
+		}
+		
+		echo Helper_View::get_value($badgesStr, '-');
+		?>
+		</div>
+	</div>
 </div>
 
 <div class="questions-holder">
@@ -52,7 +73,7 @@
 			<div class="title">
 			<?php
 			echo HTML::anchor(Route::get('question')->uri(array('action' => 'detail'
-								, 'id' => $post->id, 'slug' => $post->slug)), $post->title);
+								, 'id' => $post->id, 'slug' => $post->slug)), HTML::chars($post->title));
 			?>
 			</div>
 			<div class="content"><?php echo $post->content_excerpt(); ?></div>
@@ -61,7 +82,7 @@
 				$tags_html = '';
 				foreach ($post->get_tags() as $tag)
 				{
-					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), $tag->value);
+					$tags_html .= HTML::anchor(Route::get('tags')->uri(array('slug' => $tag->slug)), HTML::chars($tag->value));
 				}
 				
 				if ($tags_html !== '')

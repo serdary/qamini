@@ -88,7 +88,9 @@ class Controller_Questions extends Controller_Template_Main {
 	 * @uses Model_Question::check_question_title()
 	 */
 	public function action_ask()
-	{		
+	{
+		$this->add_ask_page_scripts();
+		
 		$notify_user = FALSE;
 
 		$question = new Model_Question;
@@ -114,6 +116,8 @@ class Controller_Questions extends Controller_Template_Main {
 		$question->handle_submitted_post_data($post);
 		$notify_user = $post['notify_user'] !== '0';
 
+		$question->sanitize_post_content($post);
+		
 		$question->values($post);
 
 		$errors = array();
@@ -126,6 +130,9 @@ class Controller_Questions extends Controller_Template_Main {
 		$add_result = $this->process_add_question($question, $post, $tag_list, $errors);
 		
 		if ($add_result === FALSE)	return;
+
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Ask:: %d user added Q Id: %d, Q slug: %s", $this->user->id, $question->id, $question->slug));
 		
 		if ($question->id > 0)
 			$this->request->redirect(Route::get('question')->uri(
@@ -148,6 +155,8 @@ class Controller_Questions extends Controller_Template_Main {
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
+		
+		$this->add_edit_page_scripts();
 			
 		$this->template->content = $this->get_edit_page_view()
 			->bind('post', $question)
@@ -185,6 +194,9 @@ class Controller_Questions extends Controller_Template_Main {
 		$edit_result = $this->process_edit_question($question, $post, $errors);
 		
 		if ($edit_result === FALSE)	return;
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Edit:: %d user edited Q Id: %d", $this->user->id, $question->id));
 
 		$this->request->redirect(Route::get('question')->uri(
 			array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
@@ -216,6 +228,9 @@ class Controller_Questions extends Controller_Template_Main {
 
 			Message::set(Message::ERROR, __('Oops. Something went wrong, please try again.'));
 		}
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Question Delete:: %d user deleted Q Id: %d", $this->user->id, $question_id));
 
 		$this->request->redirect(Route::get('question')->uri());
 	}
@@ -280,7 +295,7 @@ class Controller_Questions extends Controller_Template_Main {
 	 */
 	private function add_detail_page_scripts()
 	{
-		$this->add_js(array('detail'));
+		$this->add_js(array('detail', 'tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
 	}
 	
 	/**
@@ -297,6 +312,22 @@ class Controller_Questions extends Controller_Template_Main {
 			->set('user_logged_in', $this->auth->logged_in())
 			->set('theme_dir', $this->get_theme_directory())
 			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Add javascript files to the template for ask page
+	 */
+	private function add_ask_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
+	}
+
+	/**
+	 * Add javascript files to the template for edit page
+	 */
+	private function add_edit_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
 	}
 	
 	/**
@@ -368,12 +399,17 @@ class Controller_Questions extends Controller_Template_Main {
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
 
+		$answer->sanitize_post_content($post);
+		
 		$answer->handle_submitted_post_data($post);
 
 		$add_answer_result = $this->process_add_answer($post, $answer, $question);
 
 		if ($add_answer_result === TRUE)
 		{
+			Kohana_Log::instance()->add(Kohana_Log::INFO
+				, sprintf("Controller-Question Add Answer:: %d user added A ID: %d for Q Id: %d", $this->user->id, $answer->id, $question->id));
+		
 			$this->request->redirect(Route::get('question')->uri(
 				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));
 		}
@@ -417,7 +453,7 @@ class Controller_Questions extends Controller_Template_Main {
 	/**
 	 * Creates taglist for the question.
 	 * 
-	 * @param array posted data
+	 * @param  array posted data
 	 * @return string
 	 */
 	private function create_taglist_from_posted_data($post)
@@ -494,7 +530,7 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		return Pagination::factory(array(
 			'total_items' => $total_posts,
-			'items_per_page' => Kohana::config('config.default_search_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_search_page_size'),
 		));
 	}
 	
@@ -527,7 +563,7 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		return Pagination::factory(array(
 			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_questions_page_size'),
 		));
 	}
 	

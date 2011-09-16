@@ -11,7 +11,7 @@
 class Model_Comment extends Model_Post {
 
 	/**
-	 * Returns post by id
+	 * Returns comment by id
 	 *
 	 * @param  int     post id
 	 * @param  boolean false for cms
@@ -180,7 +180,7 @@ class Model_Comment extends Model_Post {
 			->and_where('post_moderation', '!=', Helper_PostModeration::DISAPPROVED)
 			->and_where('post_type', '=', Helper_PostType::COMMENT)
 			->and_where('parent_post_id', 'IN', DB::Expr(sprintf('(%s)', implode(',', $parent_ids))))
-			->order_by('latest_activity', 'desc')
+			->order_by('created_at', 'asc')
 			->find_all();
 			
 		$comments = array();
@@ -204,6 +204,16 @@ class Model_Comment extends Model_Post {
 		}
 		
 		$parent->set_comments($comments);
+	}
+
+	/**
+	 * Change new lines to breaks and returns post content
+	 * 
+	 * @return string
+	 */
+	public function get_post_content()
+	{
+		return nl2br(HTML::chars($this->content));
 	}
 	
 	/**

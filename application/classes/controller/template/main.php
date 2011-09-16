@@ -159,6 +159,14 @@ abstract class Controller_Template_Main extends Controller_Template {
 				array_unshift($this->template->scripts, $this->get_theme_static_directory() . 'js/' . $file . '.js');
 		}
 	}
+	
+	/**
+	 * Adds javascript files to make it work wysiwyg editor
+	 */
+	protected function add_wysiwyg_editor_js()
+	{
+		$this->add_js(array('tinymce', 'tinymce/jscripts/tiny_mce/tiny_mce'));
+	}
 
 	/**
 	 * Checks if the active user has been visited this question before.
@@ -250,11 +258,14 @@ abstract class Controller_Template_Main extends Controller_Template {
 	 */
 	protected function prepare_metas($title, $description)
 	{
-		$title_postfix = ' | ' . Kohana::config('config.website_name');
-		$char_limit = Kohana::config('config.max_meta_title_length') - strlen($title_postfix);
+		$title_postfix = Kohana::$config->load('config.website_name');
+		if (! Check::isStringEmptyOrNull($title))
+			$title_postfix = ' | ' . $title_postfix;
+		
+		$char_limit = Kohana::$config->load('config.max_meta_title_length') - strlen($title_postfix);
 		
 		$title = Text::limit_chars(HTML::chars($title), $char_limit) . $title_postfix;
-		$description = Text::limit_chars(HTML::chars($description), Kohana::config('config.max_meta_desc_length'));
+		$description = Text::limit_chars(HTML::chars($description), Kohana::$config->load('config.max_meta_desc_length'));
 		
 		$this->set_template_metas(new WebsiteMeta($title, $description));
 	}

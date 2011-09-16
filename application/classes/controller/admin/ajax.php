@@ -97,12 +97,13 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 		$delete_all_posts = $_POST['delete_all_posts'];
 		$mark_anonymous = $_POST['mark_anonymous'];
 
+		$moderation_succesful = TRUE;
+		$message = __('Moderation is not successful');
+			
 		try {
 			if (Check::isNull($user = Model_User::get($user_id, FALSE)))
 				$this->prepare_error_response(__('User is not available'));
-				
-			$moderation_succesful = TRUE;
-			
+
 			$posts = $user->cms_get_user_posts();
 			foreach ($posts as $post)
 			{
@@ -123,22 +124,21 @@ class Controller_Admin_Ajax extends Controller_Basic_Ajax {
 				if ($result < 1)
 				{
 					$moderation_succesful = FALSE;
-					$message = __('Moderation is not succesful for the post ') . $post->id;
+					$message = __('Moderation is not successful for the post ') . $post->id;
 					break;
 				}
 			}
-			
-			if ($moderation_succesful)	$message = __('Moderation succeeded');
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 
-				'AdminAjax::action_spammoderate Could not moderate spams er: ' . $ex->getMessage());
+				'AdminAjax::action_spammoderate Could not moderate spams err: ' . $ex->getMessage());
 			
 			$this->prepare_error_response(__('An Error Occured'));
 		}
+			
+		if ($moderation_succesful)	$message = __('Moderation succeeded');
 				
-		$this->response->body(json_encode(
-			array('message' => Check::isStringEmptyOrNull($message) ? __('Moderation succeeded') : $message)));
+		$this->response->body(json_encode(array('message' => $message)));
 	}
 	
 	/***** PRIVATE METHODS *****/

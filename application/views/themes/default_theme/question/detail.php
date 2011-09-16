@@ -65,7 +65,7 @@ if ($post_owner_info['id'] !== NULL && $post_owner_info['id'] > 0)
 }
 else 
 {
-	echo __('asked by: '), '<span>', $post_owner_info['created_by'], '</span>';
+	echo __('asked by: '), '<span>', HTML::chars($post_owner_info['created_by']), '</span>';
 }
 	
 echo ', ', $post->get_relative_creation_time();
@@ -94,7 +94,8 @@ if ($user_id === $post->user_id)
 <?php if ($post->comment_count > 0 || $user_logged_in): ?>
 
 <!-- Show comments of the question -->
-<div class="comments-holder comment-group-<?php echo $post->id; ?>">
+<div class="comments-holder">
+<div class="comment-group-<?php echo $post->id; ?>">
 
 <?php
 
@@ -111,7 +112,7 @@ foreach ($post->get_comments() as $com)
 	}
 	else 
 	{
-		echo __('comment by '), '<span>', $owner_info['created_by'], '</span>';
+		echo __('comment by '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 	}
 	
 	echo ', ', $com->get_relative_creation_time();
@@ -128,6 +129,8 @@ foreach ($post->get_comments() as $com)
 		
 	echo '</div>';
 }
+
+echo '</div>';
 
 if ($user_logged_in)
 {
@@ -222,7 +225,7 @@ if ($user_logged_in)
 		}
 		else 
 		{
-			echo __('answered by: '), '<span>', $owner_info['created_by'], '</span>';
+			echo __('answered by: '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 		}
 			
 		echo ', ', $answer->get_relative_creation_time();
@@ -253,7 +256,8 @@ if ($user_logged_in)
 
 		<?php if ($answer->comment_count > 0 || $user_logged_in): ?>
 				
-		<div class="answer-comments-holder comment-group-<?php echo $answer->id; ?>">
+		<div class="answer-comments-holder">
+		<div class="comment-group-<?php echo $answer->id; ?>">
 		<?php 		
 		foreach ($answer->get_comments() as $com)
 		{
@@ -269,7 +273,7 @@ if ($user_logged_in)
 			}
 			else 
 			{
-				echo __('comment by '), '<span>', $owner_info['created_by'], '</span>';
+				echo __('comment by '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 			}
 			
 			echo ', ', $com->get_relative_creation_time();
@@ -287,6 +291,8 @@ if ($user_logged_in)
 								
 			echo '</div>';
 		}
+		
+		echo '</div>';
 		
 		if ($user_logged_in)
 		{

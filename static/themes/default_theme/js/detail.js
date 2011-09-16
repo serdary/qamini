@@ -14,7 +14,7 @@ var Detail = function() {
 					+ $('#content_' + parentId).val().replace(/\n/g, "<br />") 
 					+ '<span class="comment-action">' + data.comment_link + '</span></div>';
 					
-					$('.comment-group-' + parentId).prepend(comment).fadeIn(700);
+					$('.comment-group-' + parentId).append(comment).fadeIn(700);
 					
 					$('#content_' + parentId).val('');
 				}
@@ -150,8 +150,8 @@ var Detail = function() {
 				data: "parent_id="+parentId+"&comment_id="+commentId+"&token="+$('.token').val(),
 				dataType: "json",
 
-				success: function(data) { Detail.DeleteCommentSuccess(data, commentId) },
-				error: function(data) { Detail.DeleteCommentError(data, commentId) },
+				success: function(data) { Detail.DeleteCommentSuccess(data, commentId); },
+				error: function(data) { Detail.DeleteCommentError(data, commentId); }
 			});
 			
 			return false;
@@ -173,8 +173,8 @@ var Detail = function() {
 				data: "post_id="+postId+"&vote_type="+voteType+"&post_type="+postType+"&token="+$('.token').val(),
 				dataType: "json",
 
-				success: function(data) { Detail.VotePostSuccess(data, postId, voteType) },
-				error: function(data) { Detail.VotePostError(data, postId, voteType) },
+				success: function(data) { Detail.VotePostSuccess(data, postId, voteType); },
+				error: function(data) { Detail.VotePostError(data, postId, voteType); }
 			});
 			
 			return false;
@@ -204,13 +204,20 @@ var Detail = function() {
 				data: "post_id="+postId+"&token="+$('.token').val(),
 				dataType: "json",
 
-				success: function(data) { Detail.AcceptPostSuccess(data, postId) },
-				error: function(data) { Detail.AcceptPostError(data, postId) },
+				success: function(data) { Detail.AcceptPostSuccess(data, postId); },
+				error: function(data) { Detail.AcceptPostError(data, postId); }
 			});
 			
 			return false;
+		},
+		
+		ConfirmDialog: function() {
+			if (!confirm("Are you sure?"))
+				return false;
+			
+			return true;
 		}
-	}
+	};
 } ();
 
 $(document).ready(function() {	
@@ -228,10 +235,17 @@ $(document).ready(function() {
 			data: $(this).serialize(),
 			dataType: "json",
 
-			success: function(data) { Detail.AddCommentSuccess(data, parentId) },
-			error: function(data) { Detail.AddCommentError(data, parentId) },
+			success: function(data) { Detail.AddCommentSuccess(data, parentId); },
+			error: function(data) { Detail.AddCommentError(data, parentId); }
 		});
 		
 		return false;         
+	});
+	
+	$(".delete_form").submit(function(e) {
+		if (!confirm("Are you sure?"))
+			return false;
+		
+		return true;         
 	});
 });

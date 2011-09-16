@@ -50,7 +50,7 @@ class Controller_Answers extends Controller_Template_Main {
 			$this->request->redirect(Route::get('question')->uri());
 
 		$errors = array();
-		$notify_user = ($answer->notify_email !== '0');
+		$notify_user = $answer->notify_email !== '0';
 		 
 		// If form is not submitted, show the edit answer form
 		if (!$post = $_POST)	return;
@@ -83,13 +83,18 @@ class Controller_Answers extends Controller_Template_Main {
 		{
 			$this->request->redirect(Route::get('question')->uri());
 		}
+		
+		$this->add_edit_answer_page_scripts();
 
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
 		$this->check_csrf_token(Arr::get($_POST, 'token', ''));
 
 		$parent_question = $this->process_delete_answer($answer_id);
 		
-		if ($parent_question === NULL)	return;
+		if (Check::isNullOrFalse($parent_question))	return;
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Answer Delete:: %d user deleted A Id: %d", $this->user->id, $answer_id));
 
 		$this->request->redirect(Route::get('question')->uri(
 			array('action'=>'detail', 'id' => $parent_question->id, 'slug' => $parent_question->slug)));
@@ -109,6 +114,14 @@ class Controller_Answers extends Controller_Template_Main {
 			->set('question_id', $question_id)
 			->set('theme_dir', $this->get_theme_directory())
 			->set('token', $this->get_csrf_token());
+	}
+	
+	/**
+	 * Adds the requred js files to make edit answer page work
+	 */
+	private function add_edit_answer_page_scripts()
+	{
+		$this->add_wysiwyg_editor_js();
 	}
 	
 	/**

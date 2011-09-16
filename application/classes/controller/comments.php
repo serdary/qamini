@@ -34,6 +34,9 @@ class Controller_Comments extends Controller_Basic_Ajax {
 		
 		if (!$this->process_add_comment($comment, $post))	return;
 		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Comment Add:: %d user added C Id: %d", $this->user->id, $comment->id));
+		
 		$this->prepare_add_success_response($comment);
 	}
 
@@ -57,6 +60,9 @@ class Controller_Comments extends Controller_Basic_Ajax {
 		$comment_id = (int) $post['comment_id'];
 		
 		if (!$this->process_delete_comment($comment_id, $post))	return;
+		
+		Kohana_Log::instance()->add(Kohana_Log::INFO
+			, sprintf("Controller-Comment Delete:: %d user deleted C Id: %d", $this->user->id, $comment_id));
 
 		$this->response->body(json_encode(
 			array('result' => 'OK', 'message' => __('Comment successfully deleted'))));

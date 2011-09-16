@@ -11,7 +11,7 @@ class PostTest extends PHPUnit_Framework_TestCase
 	
     protected function setUp()
     {
-        Kohana::config('database')->default = Kohana::config('database')->test;
+        Kohana::$config->load('database')->default = Kohana::$config->load('database')->test;
         Database::$default = 'test';
         
         if (!self::$_empty_db)
@@ -691,7 +691,7 @@ class PostTest extends PHPUnit_Framework_TestCase
     {
         $current_db = DB::select(array(DB::Expr('DATABASE()'), 'database'))->execute()->current();
     	
-    	$test_db = Kohana::config('database')->test;
+    	$test_db = Kohana::$config->load('database')->test;
     	
     	if ($current_db['database'] !== $test_db['connection']['database'])
     	{
