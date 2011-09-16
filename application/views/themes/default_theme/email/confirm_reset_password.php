@@ -9,4 +9,4 @@ If you did not request to change your password, please ignore this email.
 
 Regards,
 
-<?php echo Kohana::config('config.website_url'); ?>
+<?php echo Kohana::$config->load('config.website_url'); ?>

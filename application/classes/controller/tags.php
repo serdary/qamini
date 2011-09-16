@@ -52,7 +52,7 @@ class Controller_Tags extends Controller_Template_Main {
 		// Prepare pagination control
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_tags,
-			'items_per_page' => Kohana::config('config.default_tags_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_tags_page_size'),
 		));
 
 		$tags = ORM::factory('tag')->get_tags($pagination->items_per_page, $pagination->offset);
@@ -64,7 +64,7 @@ class Controller_Tags extends Controller_Template_Main {
 	 * Sets template's meta fields for tag list page
 	 */
 	private function set_taglist_page_meta_texts()	{
-		$this->prepare_metas(__('All Tags'), 'All Tags listing on ' . Kohana::config('config.website_name'));
+		$this->prepare_metas(__('All Tags'), 'All Tags listing on ' . Kohana::$config->load('config.website_name'));
 	}
 
 	/**
@@ -93,7 +93,7 @@ class Controller_Tags extends Controller_Template_Main {
 
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_questions_page_size'),
 		));
 		
 		$this->set_tag_questions_page_meta_texts($tag);
@@ -110,6 +110,6 @@ class Controller_Tags extends Controller_Template_Main {
 	private function set_tag_questions_page_meta_texts($tag)
 	{
 		$this->prepare_metas(__('Tagged by ') . $tag->value . __(' Contents')
-			, $tag->value . __(' tagged contents on ') . Kohana::config('config.website_name') . __(' website'));
+			, $tag->value . __(' tagged contents on ') . Kohana::$config->load('config.website_name') . __(' website'));
 	}
 }

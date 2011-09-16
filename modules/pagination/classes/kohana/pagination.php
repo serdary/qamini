@@ -89,7 +89,7 @@ class Kohana_Pagination {
 	public function config_group($group = 'default')
 	{
 		// Load the pagination config file
-		$config_file = Kohana::config('pagination');
+		$config_file = Kohana::$config->load('pagination');
 
 		// Initialize the $config array
 		$config['group'] = (string) $group;

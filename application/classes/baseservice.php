@@ -27,7 +27,7 @@ abstract class BaseService
 	 */
 	public function __construct()
 	{
-		$this->cache = Cache::instance(Kohana::config('config.cache_driver'));
+		$this->cache = Cache::instance(Kohana::$config->load('config.cache_driver'));
 	}
 	
 	/**
@@ -37,7 +37,7 @@ abstract class BaseService
 	{
 		if (! Check::isListEmptyOrNull($this->items))	return;	
 		
-		$this->cache = Cache::instance(Kohana::config('config.cache_driver'));
+		$this->cache = Cache::instance(Kohana::$config->load('config.cache_driver'));
 
 		$this->item_found = TRUE;
 		
@@ -62,7 +62,7 @@ abstract class BaseService
 	{
 		try {
 			if ($this->items)
-				$this->cache->set($this->cache_key, $this->items, (int) Kohana::config('config.cache_ttl'));	
+				$this->cache->set($this->cache_key, $this->items, (int) Kohana::$config->load('config.cache_ttl'));	
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'BaseService::set_cache, ex: ' . $ex->getMessage());

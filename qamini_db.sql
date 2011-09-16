@@ -241,7 +241,9 @@ INSERT INTO `settings` (`id`, `key`, `value`, `created_at`, `updated_at`, `setti
 (15, 'own_accepted_answer', '12', 1296987527, 1296987527, 'active'),
 (16, 'login_required_to_add_content', '0', 1305483176, 1305483176, 'active'),
 (17, 'cache_ttl', '86400', 1305483176, 1305483176, 'active'),
-(18, 'recaptcha_active', '1', 1305483176, 1305483176, 'active');
+(18, 'recaptcha_active', '1', 1305483176, 1305483176, 'active'),
+(19, 'badge_activated', '1', 1305483176, 1305483176, 'active');
+
 
 -- --------------------------------------------------------
 

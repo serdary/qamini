@@ -48,7 +48,7 @@ class Helper_Mailer {
 		require_once Kohana::find_file('vendor', 'swiftmailer/lib/swift_required');
 
 		// Get the email configuration into array
-		$email_config = Kohana::config('email');
+		$email_config = Kohana::$config->load('email');
 
 		$body = View::factory('themes/' . Model_Setting::instance()->get('active_theme') . '/email/'
 			. $view_file, $view_vars);
@@ -56,7 +56,7 @@ class Helper_Mailer {
 		// Create an email message to reset user's password
 		$message = Swift_Message::newInstance()
 			->setSubject($mail_subject)
-			->setFrom(array(Kohana::config('config.email') => $mail_from))
+			->setFrom(array(Kohana::$config->load('config.email') => $mail_from))
 			->setTo(array($receiver_mail => $receiver_name))
 			->setBody($body);
 

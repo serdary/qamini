@@ -41,7 +41,7 @@ class Controller_User extends Controller_Template_Main {
 
 		$pagination_questions = Pagination::factory(array(
 			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_profile_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_profile_questions_page_size'),
 		));
 
 		$questions = $user->get_user_posts($pagination_questions->items_per_page, $pagination_questions->offset);
@@ -204,7 +204,7 @@ class Controller_User extends Controller_Template_Main {
 	private function get_recaptcha_image()
 	{
 		include_once Kohana::find_file('vendor', 'recaptcha/recaptchalib');
-	    return recaptcha_get_html(Kohana::config('captcha.public_key'));
+	    return recaptcha_get_html(Kohana::$config->load('captcha.public_key'));
 	}
 	
 	/**
@@ -219,7 +219,7 @@ class Controller_User extends Controller_Template_Main {
 		
 		$recaptcha_error = NULL;
 
-		$recaptcha_response = recaptcha_check_answer(Kohana::config('captcha.private_key')
+		$recaptcha_response = recaptcha_check_answer(Kohana::$config->load('captcha.private_key')
 			, $_SERVER['REMOTE_ADDR']
 			, $_POST['recaptcha_challenge_field']
 			, $_POST['recaptcha_response_field']
@@ -441,7 +441,7 @@ class Controller_User extends Controller_Template_Main {
 	private function set_index_page_meta_texts($user)
 	{
 		$this->prepare_metas($user->username . __(' Profile Page'), 
-			$user->username . __(' Profile Page on ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+			$user->username . __(' Profile Page on ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 	
 	/**
@@ -449,8 +449,8 @@ class Controller_User extends Controller_Template_Main {
 	 */
 	private function set_login_page_meta_texts()
 	{
-		$this->prepare_metas(__('Login to ') . Kohana::config('config.website_name'), 
-			__('Login to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+		$this->prepare_metas(__('Login to ') . Kohana::$config->load('config.website_name'), 
+			__('Login to ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 	
 	/**
@@ -458,7 +458,7 @@ class Controller_User extends Controller_Template_Main {
 	 */
 	private function set_signup_page_meta_texts()
 	{
-		$this->prepare_metas(__('Signup to ') . Kohana::config('config.website_name'), 
-			__('Signup to ') . Kohana::config('config.website_name') . __(' Question & Answer website'));
+		$this->prepare_metas(__('Signup to ') . Kohana::$config->load('config.website_name'), 
+			__('Signup to ') . Kohana::$config->load('config.website_name') . __(' Question & Answer website'));
 	}
 }

@@ -111,7 +111,7 @@
 				}
 			});
 
-			<?php if (Kohana::config('codebench')->expand_all) { ?>
+			<?php if (Kohana::$config->load('codebench')->expand_all) { ?>
 				// Expand all benchmark details by default
 				$toggle_all.click();
 			<?php } ?>

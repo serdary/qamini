@@ -34,7 +34,7 @@ class Model_User extends Model_Auth_User {
 				array('min_length', array(':value', 1)),
 				array('max_length', array(':value', 32)),
 				array('regex', array(':value', '/^[-\pL\pN_.]++$/uD')),
-				array(array($this, 'username_available'), array(':validation', ':field')),
+				array(array($this, 'unique'), array('username', ':value')),
 			),
 			'password' => array(
 				array('not_empty'),
@@ -44,7 +44,7 @@ class Model_User extends Model_Auth_User {
 				array('min_length', array(':value', 4)),
 				array('max_length', array(':value', 127)),
 				array('email'),
-				array(array($this, 'email_available'), array(':validation', ':field')),
+				array(array($this, 'unique'), array('email', ':field')),
 			),
 		);
 	}
@@ -163,8 +163,8 @@ class Model_User extends Model_Auth_User {
 												. Auth::instance()->hash($this->email), 'http');
 											
 		$mailer = new QaminiMailer($this->email, $this->username
-			, Kohana::config('config.website_name') . __(' - Signup') 
-			, Kohana::config('config.website_name') . __(' Website'), 'confirm_signup'
+			, Kohana::$config->load('config.website_name') . __(' - Signup') 
+			, Kohana::$config->load('config.website_name') . __(' Website'), 'confirm_signup'
 			, array('url' => $link, 'username' => $this->username));
 			
 		$mailer->send();
@@ -248,8 +248,8 @@ class Model_User extends Model_Auth_User {
 		$link = URL::site($uri, 'http');
 			
 		$mailer = new QaminiMailer($this->email, $this->username
-			, Kohana::config('config.website_name') . __(' - Reset Password') 
-			, Kohana::config('config.website_name') . __(' Website'), 'confirm_reset_password'
+			, Kohana::$config->load('config.website_name') . __(' - Reset Password') 
+			, Kohana::$config->load('config.website_name') . __(' Website'), 'confirm_reset_password'
 			, array('url' => $link, 'username' => $this->username));
 			
 		$mailer->send();
@@ -288,7 +288,7 @@ class Model_User extends Model_Auth_User {
 	 */
 	private function confirmation_link_expired($time)
 	{
-		return ($time + Kohana::config('config.reset_password_expiration_time')) < time();
+		return ($time + Kohana::$config->load('config.reset_password_expiration_time')) < time();
 	}
 
 	/**
@@ -341,8 +341,7 @@ class Model_User extends Model_Auth_User {
 	 */
 	public function check_password($old_password)
 	{
-		if (!Check::isNullOrFalse($user) && 
-			Auth::instance()->password($user->username) === Auth::instance()->hash($old_password))
+		if (Auth::instance()->password($this->username) === Auth::instance()->hash($old_password))
 		{
 			return;
 		}

@@ -31,7 +31,7 @@ class Controller_Admin_Post extends Controller_Admin_Template {
 		
 		$pagination = Pagination::factory(array(
 			'total_items' => $total_posts,
-			'items_per_page' => Kohana::config('config.default_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_questions_page_size'),
 		));
 
 		$posts = Model_Question::cms_get_posts($pagination->items_per_page

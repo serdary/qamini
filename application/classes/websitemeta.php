@@ -27,7 +27,7 @@ class WebsiteMeta
 	 */
 	public static function generate_default_metas()
 	{
-		$meta = new WebsiteMeta(Kohana::config('config.website_name') . __(' Question & Answer System'), 
+		$meta = new WebsiteMeta(Kohana::$config->load('config.website_name') . __(' Question & Answer System'), 
 			__('Open source Question & answer website, powered by Kohana 3.1'));
 			
 		return $meta;

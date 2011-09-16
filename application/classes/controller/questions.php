@@ -530,7 +530,7 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		return Pagination::factory(array(
 			'total_items' => $total_posts,
-			'items_per_page' => Kohana::config('config.default_search_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_search_page_size'),
 		));
 	}
 	
@@ -563,7 +563,7 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		return Pagination::factory(array(
 			'total_items' => $total_questions,
-			'items_per_page' => Kohana::config('config.default_questions_page_size'),
+			'items_per_page' => Kohana::$config->load('config.default_questions_page_size'),
 		));
 	}
 	

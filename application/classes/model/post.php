@@ -114,7 +114,7 @@
 	public function content_excerpt()
 	{
 		return nl2br(Text::limit_chars(HTML::chars(strip_tags($this->content))
-									, Kohana::config('config.default_post_content_truncate_limit')));
+									, Kohana::$config->load('config.default_post_content_truncate_limit')));
 	}
 
 	/**
@@ -666,7 +666,7 @@
 		array('action'=>'detail', 'id' => $post->id, 'slug' => $post->slug)), 'http');
 		
 		$mailer = new QaminiMailer($email_fields['email_address'], $email_fields['created_by']
-		, Kohana::config('config.website_name'), Kohana::config('config.website_name')
+		, Kohana::$config->load('config.website_name'), Kohana::$config->load('config.website_name')
 		, 'post_update_notification_email', array('url' => $link, 'created_by' => $email_fields['created_by']));
 		
 		$mailer->send();

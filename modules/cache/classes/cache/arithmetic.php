@@ -1,3 +1,3 @@
 <?php defined('SYSPATH') or die('No direct script access.');
 
-class Cache_Eaccelerator extends Kohana_Cache_Eaccelerator {}
+interface Cache_Arithmetic extends Kohana_Cache_Arithmetic {}

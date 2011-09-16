@@ -23,7 +23,7 @@ abstract class Kohana_Auth {
 		if ( ! isset(Auth::$_instance))
 		{
 			// Load the configuration for this type
-			$config = Kohana::config('auth');
+			$config = Kohana::$config->load('auth');
 
 			if ( ! $type = $config->get('driver'))
 			{
@@ -54,7 +54,7 @@ abstract class Kohana_Auth {
 		// Save the config in the object
 		$this->_config = $config;
 
-		$this->_session = Session::instance();
+		$this->_session = Session::instance($this->_config['session_type']);
 	}
 
 	abstract protected function _login($username, $password, $remember);
@@ -86,12 +86,6 @@ abstract class Kohana_Auth {
 	{
 		if (empty($password))
 			return FALSE;
-
-		if (is_string($password))
-		{
-			// Create a hashed password
-			$password = $this->hash($password);
-		}
 
 		return $this->_login($username, $password, $remember);
 	}

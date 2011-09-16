@@ -48,7 +48,7 @@ class Model_Setting extends ORM {
 	 */
 	public function load_settings()
 	{
-		$this->_cache = Cache::instance(Kohana::config('config.cache_driver'));
+		$this->_cache = Cache::instance(Kohana::$config->load('config.cache_driver'));
 
 		if ($this->loaded_from_cache())	return;
 
@@ -70,7 +70,7 @@ class Model_Setting extends ORM {
 	{
 		try {
 			if ($this->_settings)
-				$this->_cache->set('settings', $this->_settings, (int) Kohana::config('config.cache_ttl'));	
+				$this->_cache->set('settings', $this->_settings, (int) Kohana::$config->load('config.cache_ttl'));	
 		}
 		catch (Exception $ex) {
 			Kohana_Log::instance()->add(Kohana_Log::ERROR, 'Model_Setting::load_settings, ex: ' . $ex->getMessage());
@@ -114,7 +114,7 @@ class Model_Setting extends ORM {
 	 */
 	private function load_from_config()
 	{
-		$this->_settings = Kohana::config('settings');
+		$this->_settings = Kohana::$config->load('settings');
 	}
 
 	/**
