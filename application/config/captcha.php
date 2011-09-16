@@ -8,10 +8,10 @@ return array(
 	/*
 	 * Recaptcha public key
 	 */
-	'public_key' => '6LeSksQSAAAAAMrZVCi3291e1iEJJfOOivQfP8Tb',
+	'public_key' => '',
 
 	/*
 	 * Recaptcha private key, must be secret!
 	 */
-	'private_key' => '6LeSksQSAAAAAPZnRj94n7Xer61podrstDP1oB4p'
+	'private_key' => ''
 );
