@@ -258,7 +258,10 @@ abstract class Controller_Template_Main extends Controller_Template {
 	 */
 	protected function prepare_metas($title, $description)
 	{
-		$title_postfix = ' | ' . Kohana::config('config.website_name');
+		$title_postfix = Kohana::config('config.website_name');
+		if (! Check::isStringEmptyOrNull($title))
+			$title_postfix = ' | ' . $title_postfix;
+		
 		$char_limit = Kohana::config('config.max_meta_title_length') - strlen($title_postfix);
 		
 		$title = Text::limit_chars(HTML::chars($title), $char_limit) . $title_postfix;

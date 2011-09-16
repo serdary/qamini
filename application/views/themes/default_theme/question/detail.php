@@ -112,7 +112,7 @@ foreach ($post->get_comments() as $com)
 	}
 	else 
 	{
-		echo __('comment by '), '<span>', $owner_info['created_by'], '</span>';
+		echo __('comment by '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 	}
 	
 	echo ', ', $com->get_relative_creation_time();
@@ -225,7 +225,7 @@ if ($user_logged_in)
 		}
 		else 
 		{
-			echo __('answered by: '), '<span>', $owner_info['created_by'], '</span>';
+			echo __('answered by: '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 		}
 			
 		echo ', ', $answer->get_relative_creation_time();
@@ -273,7 +273,7 @@ if ($user_logged_in)
 			}
 			else 
 			{
-				echo __('comment by '), '<span>', $owner_info['created_by'], '</span>';
+				echo __('comment by '), '<span>', HTML::chars($owner_info['created_by']), '</span>';
 			}
 			
 			echo ', ', $com->get_relative_creation_time();
