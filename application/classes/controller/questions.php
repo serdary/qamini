@@ -108,7 +108,13 @@ class Controller_Questions extends Controller_Template_Main {
 		
 		if (! $this->check_user_has_write_access(FALSE))
 		{
-			$this->request->redirect(Route::get('static')->uri(array('action' => 'join')));
+			if ($this->check_user_needs_validation()) {
+				Message::set(Message::NOTICE, __('Please click the validation link on your email to add new questions.'));
+				$this->request->redirect(Route::get('homepage')->uri());
+			}
+			else {
+				$this->request->redirect(Route::get('user')->uri(array('action' => 'register')));
+			}
 		}
 
 		$this->check_csrf_token(Arr::get($post, 'token', ''));
@@ -232,7 +238,8 @@ class Controller_Questions extends Controller_Template_Main {
 		Kohana_Log::instance()->add(Kohana_Log::INFO
 			, sprintf("Controller-Question Delete:: %d user deleted Q Id: %d", $this->user->id, $question_id));
 
-		$this->request->redirect(Route::get('question')->uri());
+		Message::set(Message::NOTICE, __('Question has been deleted.'));
+		$this->request->redirect('');
 	}
 
 	/**

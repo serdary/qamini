@@ -236,8 +236,6 @@ abstract class Controller_Template_Main extends Controller_Template {
 		$this->request->redirect($redirect_page);
 	}
 
-	/***** PRIVATE METHODS *****/
-
 	/**
 	 * Sets template default values such as title, meta tags, styles etc.
 	 */
@@ -302,5 +300,15 @@ abstract class Controller_Template_Main extends Controller_Template {
 		if ($login_required === 0 && !$this->auth->logged_in())	return TRUE;
 		
 		return $this->user->valid_user();
+	}
+	
+	/**
+	 * Checks if the user is logged in and has 'user' role
+	 * 
+	 * @return boolean
+	 */
+	protected function check_user_needs_validation()
+	{
+		return $this->auth->logged_in() && ! $this->user->has('roles', ORM::factory('role', array('name' => 'user')));
 	}
 }

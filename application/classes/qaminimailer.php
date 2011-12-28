@@ -68,9 +68,9 @@ class QaminiMailer {
 	private function create_mail_message()
 	{
 		return Swift_Message::newInstance()
-			->setSubject($this->_receiver_mail)
-			->setFrom(array(Kohana::$config->load('config.email') => $this->_receiver_mail))
-			->setTo(array($this->_receiver_mail => $this->_receiver_mail))
+			->setSubject($this->_mail_subject)
+			->setFrom(Kohana::$config->load('config.email'), $this->_mail_from)
+			->setTo($this->_receiver_mail, $this->_receiver_name)
 			->setBody($this->create_mail_body());
 	}
 	

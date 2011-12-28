@@ -78,7 +78,11 @@ class DateTimeQamini extends Kohana_Date
 	 */
 	private function calculate_diff()
 	{		
-		return Kohana_Date::span($this->_time, $this->_next_time);
+		$diff = Kohana_Date::span($this->_time, $this->_next_time);
+		// convert weeks to days
+		$diff['days'] += $diff['weeks'] * 7;
+		$diff['weeks'] = 0;
+		return $diff;
 	}
 	
 	/**

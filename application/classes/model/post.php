@@ -666,9 +666,10 @@
 		array('action'=>'detail', 'id' => $post->id, 'slug' => $post->slug)), 'http');
 		
 		$mailer = new QaminiMailer($email_fields['email_address'], $email_fields['created_by']
-		, Kohana::$config->load('config.website_name'), Kohana::$config->load('config.website_name')
+		, 'Updated Post on ' . Kohana::$config->load('config.website_name')
+		, Kohana::$config->load('config.website_name') . __(' Website')
 		, 'post_update_notification_email', array('url' => $link, 'created_by' => $email_fields['created_by']));
-		
+				
 		$mailer->send();
 	}
 	
