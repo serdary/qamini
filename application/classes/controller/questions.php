@@ -113,7 +113,7 @@ class Controller_Questions extends Controller_Template_Main {
 				$this->request->redirect(Route::get('homepage')->uri());
 			}
 			else {
-				$this->request->redirect(Route::get('user')->uri(array('action' => 'register')));
+				$this->request->redirect(Route::get('user')->uri(array('action' => 'signup')));
 			}
 		}
 
@@ -397,10 +397,7 @@ class Controller_Questions extends Controller_Template_Main {
 	{
 		if (! $this->check_user_has_write_access(FALSE))
 		{
-			/*$this->request->redirect(Route::get('question')->uri(
-				array('action'=>'detail', 'id' => $question->id, 'slug' => $question->slug)));*/
-			
-			$this->request->redirect(Route::get('static')->uri(array('action' => 'join')));
+			$this->request->redirect(Route::get('user')->uri(array('action' => 'signup')));
 		}
 		
 		// Check token to prevent csrf attacks, if token is not validated, redirect to question list
