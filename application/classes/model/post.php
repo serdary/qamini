@@ -20,7 +20,17 @@
 	
 	protected $_table_name = 'posts';
 	
-	public $allowed_elements = '<p><strong><em><u><h1><h2><h3><h4><h5><h6><img><li><ol><ul><span><div><br><ins><del><address><hr><blockquote>';
+	public $allowed_elements_arr = array('<p>','<strong>','<em>','<u>','<h1>','<h2>','<h3>','<h4>','<h5>','<h6>','<img>','<li>','<ol>','<ul>','<span>','<div>','<br>','<br/>','<br />','<ins>','<del>','<address>','<hr>','<hr/>','<hr />','<blockquote>');
+	public $allowed_elements = ''; 
+	
+	/**
+	 * Post Model Constructor
+	 */
+	public function __construct()
+	{
+		parent::__construct();
+		$this->allowed_elements = implode($this->allowed_elements_arr);
+	}
 	
 	/**
 	 * Validation rules for post object
@@ -131,10 +141,12 @@
 	 * Sanitize html post content
 	 * 
 	 * @param array posted data
-	 */
-	public function sanitize_post_content(&$post)
+	 */	
+ 	public function sanitize_post_content(&$post)
 	{
 		if (!isset($post['content']))	return;
+		
+		$post['content'] = $this->strip_tags_attributes($post['content']);
 		
 		$post['content'] = strip_tags(stripslashes($post['content']), $this->allowed_elements);
 	}
@@ -793,6 +805,21 @@
 	{
 		return ORM::factory('post', $this->id)->tags->find_all();
 	}
+		
+ 	/**
+	 * Sanitizes javascript functions inside html tags
+	 * thanks to: http://www.php.net/manual/en/function.strip-tags.php#82180
+	 * 
+	 * @return array
+	 */
+	private function strip_tags_attributes($sSource, $aAllowedTags = array(), $aDisabledAttributes = array())
+    {
+    	$aAllowedTags = $this->allowed_elements_arr;
+        if (empty($aDisabledAttributes)) 
+        	$aDisabledAttributes = array('onabort', 'onactivate', 'onafterprint', 'onafterupdate', 'onbeforeactivate', 'onbeforecopy', 'onbeforecut', 'onbeforedeactivate', 'onbeforeeditfocus', 'onbeforepaste', 'onbeforeprint', 'onbeforeunload', 'onbeforeupdate', 'onblur', 'onbounce', 'oncellchange', 'onchange', 'onclick', 'oncontextmenu', 'oncontrolselect', 'oncopy', 'oncut', 'ondataavaible', 'ondatasetchanged', 'ondatasetcomplete', 'ondblclick', 'ondeactivate', 'ondrag', 'ondragdrop', 'ondragend', 'ondragenter', 'ondragleave', 'ondragover', 'ondragstart', 'ondrop', 'onerror', 'onerrorupdate', 'onfilterupdate', 'onfinish', 'onfocus', 'onfocusin', 'onfocusout', 'onhelp', 'onkeydown', 'onkeypress', 'onkeyup', 'onlayoutcomplete', 'onload', 'onlosecapture', 'onmousedown', 'onmouseenter', 'onmouseleave', 'onmousemove', 'onmoveout', 'onmouseover', 'onmouseup', 'onmousewheel', 'onmove', 'onmoveend', 'onmovestart', 'onpaste', 'onpropertychange', 'onreadystatechange', 'onreset', 'onresize', 'onresizeend', 'onresizestart', 'onrowexit', 'onrowsdelete', 'onrowsinserted', 'onscroll', 'onselect', 'onselectionchange', 'onselectstart', 'onstart', 'onstop', 'onsubmit', 'onunload');
+
+        return preg_replace('/<(.*?)>/ie', "'<' . preg_replace(array('/javascript:[^\"\']*/i', '/(" . implode('|', $aDisabledAttributes) . ")[ \\t\\n]*=[ \\t\\n]*[\"\'][^\"\']*[\"\']/i', '/\s+/'), array('', '', ' '), stripslashes('\\1')) . '>'", strip_tags($sSource, implode('', $aAllowedTags)));
+    }
 	
 	/* CMS METHODS */
 	
